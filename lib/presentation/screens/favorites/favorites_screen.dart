@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../widgets/sneaker_card.dart';
+import 'package:sneaker_recognizer_plateform/presentation/widgets/cards/sneaker_card.dart';
+import '../../widgets/cards/sneaker_card.dart';
 import '../../../domain/models/sneaker.dart';
 
 class FavoritesScreen extends StatelessWidget {

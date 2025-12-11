@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:sneaker_recognizer_plateform/presentation/screens/main/main_screen.dart';
 import 'presentation/screens/home/home_screen.dart';
 
 Future<void> main() async {
@@ -21,7 +22,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const HomeScreen(), // NOW HomeScreen contains the menu
+      home: const MainScreen(), // <-- UPDATED TO MAIN SCREEN
     );
   }
 }
