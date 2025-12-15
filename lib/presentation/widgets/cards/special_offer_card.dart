@@ -9,7 +9,7 @@ class SpecialOfferCard extends StatelessWidget {
     super.key,
     required this.imagePath,
     required this.title,
-    this.heightRatio = 0.15,
+    this.heightRatio = 0.3,
   });
 
   @override
