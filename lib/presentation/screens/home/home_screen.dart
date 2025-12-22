@@ -1,15 +1,12 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:typed_data';
 import 'package:sneaker_recognizer_plateform/presentation/screens/searchResult/search_result.dart';
+import 'dart:typed_data';
 import 'package:sneaker_recognizer_plateform/presentation/widgets/SneakerScan/SneakerScanButton.dart';
 import 'package:sneaker_recognizer_plateform/presentation/widgets/cards/popular_sneaker_card.dart';
 import 'package:sneaker_recognizer_plateform/presentation/widgets/cards/special_offer_card.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:sneaker_recognizer_plateform/services/sneaker_api_service.dart';
 
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'home_controller.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -44,38 +41,17 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> sendImageAndNavigate(XFile image) async {
-    const String apiUrl = "https://eozkyb697fvhf5e.m.pipedream.net";
-
     try {
       setState(() => _loading = true);
 
-      final bytes = await image.readAsBytes();
-
-      var request = http.MultipartRequest('POST', Uri.parse(apiUrl));
-
-      request.files.add(
-        http.MultipartFile.fromBytes(
-          'image', // backend key
-          bytes,
-          filename: image.name,
-        ),
-      );
-
-      final response = await request.send();
-      final responseBody = await response.stream.bytesToString();
+      final data = await SneakerApiService.getSneakerData(image);
 
       setState(() => _loading = false);
 
-      if (response.statusCode == 200) {
-        print(response);
-        final data = jsonDecode(responseBody);
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => SneakerResultPage(result: data)),
-        );
-      } else {
-        debugPrint("API error: ${response.statusCode}");
-      }
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => SneakerResultPage(result: data)),
+      );
     } catch (e) {
       setState(() => _loading = false);
       debugPrint("Request failed: $e");
