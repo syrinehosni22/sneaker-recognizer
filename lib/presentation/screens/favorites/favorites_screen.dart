@@ -7,8 +7,18 @@ class FavoritesScreen extends StatelessWidget {
   FavoritesScreen({super.key});
 
   final List<Sneaker> favoriteSneakers = [
-    Sneaker(name: "Nike Air Max", links: ["https://nike.com"]),
-    Sneaker(name: "Adidas Ultra Boost", links: ["https://adidas.com"]),
+    Sneaker(
+      id: "azerty12",
+      name: "Nike Air Max",
+      links: ["https://nike.com"],
+      price: 85,
+    ),
+    Sneaker(
+      id: "azerty12",
+      name: "Adidas Ultra Boost",
+      links: ["https://adidas.com"],
+      price: 95,
+    ),
   ];
 
   @override

@@ -15,10 +15,14 @@ class ShopOfferCard extends StatelessWidget {
     this.shopUrl,
   });
 
-  Future<void> _openShop() async {
-    if (shopUrl == null || shopUrl!.isEmpty) return;
-    final uri = Uri.parse(shopUrl!);
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  // Future<void> _openShop() async {
+  //   if (shopUrl == null || shopUrl!.isEmpty) return;
+  //   final uri = Uri.parse(shopUrl!);
+  //   await launchUrl(uri, mode: LaunchMode.externalApplication);
+  // }
+
+  void _order() {
+    print("order");
   }
 
   bool get hasButton => shopUrl != null && shopUrl!.isNotEmpty;
@@ -68,28 +72,62 @@ class ShopOfferCard extends StatelessWidget {
             /// RIGHT SIDE: Location icon and Shop button
             Row(
               children: [
-                if (location != null && location!.isNotEmpty)
-                  IconButton(
-                    icon: const Icon(Icons.location_on, color: Colors.grey),
-                    onPressed: () async {
-                      final uri = Uri.parse(
-                        "https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(location!)}",
-                      );
-                      if (await canLaunchUrl(uri)) {
-                        await launchUrl(
-                          uri,
-                          mode: LaunchMode.externalApplication,
-                        );
-                      }
-                    },
-                  ),
+                // if (location != null && location!.isNotEmpty)
+                //   IconButton(
+                //     icon: const Icon(Icons.location_on, color: Colors.grey),
+                //     onPressed: () async {
+                //       final uri = Uri.parse(
+                //         "https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(location!)}",
+                //       );
+                //       if (await canLaunchUrl(uri)) {
+                //         await launchUrl(
+                //           uri,
+                //           mode: LaunchMode.externalApplication,
+                //         );
+                //       }
+                //     },
+                //   ),
+                // if (hasButton)
+                //   SizedBox(
+                //     height: 34,
+                //     child: ElevatedButton(
+                //       onPressed: _openShop,
+                //       style: ElevatedButton.styleFrom(
+                //         backgroundColor: Colors.black,
+                //         elevation: 0,
+                //         padding: const EdgeInsets.symmetric(horizontal: 12),
+                //         shape: RoundedRectangleBorder(
+                //           borderRadius: BorderRadius.circular(10),
+                //         ),
+                //       ),
+                //       child: Row(
+                //         mainAxisSize: MainAxisSize.min,
+                //         children: const [
+                //           Text(
+                //             "Shop",
+                //             style: TextStyle(
+                //               color: Colors.white,
+                //               fontSize: 13,
+                //               fontWeight: FontWeight.w600,
+                //             ),
+                //           ),
+                //           SizedBox(width: 6),
+                //           Icon(
+                //             Icons.arrow_forward,
+                //             size: 14,
+                //             color: Colors.white,
+                //           ),
+                //         ],
+                //       ),
+                //     ),
+                //   ),
                 if (hasButton)
                   SizedBox(
                     height: 34,
                     child: ElevatedButton(
-                      onPressed: _openShop,
+                      onPressed: _order,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black,
+                        backgroundColor: const Color(0xFF7C3AED),
                         elevation: 0,
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         shape: RoundedRectangleBorder(
@@ -100,7 +138,7 @@ class ShopOfferCard extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: const [
                           Text(
-                            "Shop",
+                            "Order",
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 13,
