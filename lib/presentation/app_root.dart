@@ -1,0 +1,21 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../services/auth_service.dart';
+import 'screens/login/login_page.dart';
+import 'screens/main/main_screen.dart';
+
+class AppRoot extends StatelessWidget {
+  const AppRoot({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final auth = context.watch<AuthService>();
+
+    if (auth.isLoggedIn) {
+      return const MainScreen(); // menu inside
+    } else {
+      return const LoginPage();
+    }
+  }
+}

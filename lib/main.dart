@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:sneaker_recognizer_plateform/presentation/screens/main/main_screen.dart';
-import 'presentation/screens/home/home_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:sneaker_recognizer_plateform/presentation/app_root.dart';
+
+import 'presentation/screens/main/main_screen.dart';
+import 'presentation/screens/login/login_page.dart';
+import 'services/auth_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,14 +19,17 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Sneaker Recognizer',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+    return ChangeNotifierProvider(
+      create: (_) => AuthService(),
+      child: MaterialApp(
+        title: 'Sneaker Recognizer',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+          useMaterial3: true,
+        ),
+        home: const AppRoot(),
       ),
-      home: const MainScreen(), // <-- UPDATED TO MAIN SCREEN
     );
   }
 }
