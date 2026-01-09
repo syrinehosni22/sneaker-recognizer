@@ -27,8 +27,6 @@ class _LoginPageState extends State<LoginPage> {
         _emailCtrl.text.trim(),
         _passwordCtrl.text,
       );
-
-      Navigator.pushReplacementNamed(context, '/home');
     } catch (e) {
       ScaffoldMessenger.of(
         context,

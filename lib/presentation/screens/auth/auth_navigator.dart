@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sneaker_recognizer_plateform/presentation/screens/inscription/subscription_page.dart';
 import 'package:sneaker_recognizer_plateform/presentation/screens/login/login_page.dart';
 import 'package:sneaker_recognizer_plateform/presentation/screens/reset/reset_password_page.dart';
 
@@ -19,10 +20,8 @@ class AuthNavigator extends StatelessWidget {
           case '/reset-password':
             return MaterialPageRoute(builder: (_) => ResetPasswordPage());
 
-          // case '/register':
-          //   return MaterialPageRoute(
-          //     builder: (_) => const RegisterPage(),
-          //   );
+          case '/register':
+            return MaterialPageRoute(builder: (_) => const RegisterPage());
 
           default:
             return MaterialPageRoute(builder: (_) => const LoginPage());
