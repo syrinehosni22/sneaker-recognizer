@@ -1,0 +1,37 @@
+[
+    {
+        "title": "Nike Air Force 1 '07 White - Foot Locker France",
+        "price": 119.99,
+        "shop": "footlocker.fr",
+        "link": "https://www.footlocker.fr/fr/product/nike-air-force-1-07-white/314102.html",
+        "snippet": "Nike Air Force 1 '07 White. Prix: €119.99. Livraison gratuite chez Foot Locker France."
+    },
+    {
+        "title": "Nike Air Force 1 White - JD Sports",
+        "price": 114.99,
+        "shop": "jdsports.fr",
+        "link": "https://www.jdsports.fr/product/nike-air-force-1-white/1598742",
+        "snippet": "Achetez la Nike Air Force 1 blanche chez JD Sports pour €114.99. Livraison rapide."
+    },
+    {
+        "title": "Nike Air Force 1 Low White - Decathlon",
+        "price": 109.99,
+        "shop": "decathlon.fr",
+        "link": "https://www.decathlon.fr/p/nike-air-force-1-low-white/_/R-p-344234",
+        "snippet": "Nike Air Force 1 Low blanche à partir de €109.99 chez Decathlon."
+    },
+    {
+        "title": "Nike Air Force 1 White Sneakers - Amazon",
+        "price": 112.50,
+        "shop": "amazon.fr",
+        "link": "https://www.amazon.fr/dp/B07HDF23A",
+        "snippet": "Nike Air Force 1 White. Prix €112.50. Expédié par Amazon."
+    },
+    {
+        "title": "Nike Air Force 1 07 White - Nike Official Store",
+        "price": 120.00,
+        "shop": "nike.com",
+        "link": "https://www.nike.com/fr/t/air-force-1-07",
+        "snippet": "Nike Air Force 1 '07 White disponible sur le Nike Store officiel pour €120."
+    }
+]

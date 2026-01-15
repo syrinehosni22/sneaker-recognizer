@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:sneaker_recognizer_plateform/domain/models/sneaker.dart';
 import 'package:sneaker_recognizer_plateform/presentation/widgets/cards/search_result_card.dart';
 
 class SneakerResultPage extends StatelessWidget {
-  final Map<String, dynamic> result;
+  final List<Map<String, dynamic>> result; // ✅ List, pas Map
 
   const SneakerResultPage({super.key, required this.result});
 
   @override
   Widget build(BuildContext context) {
-    final List elements = (result['results'] ?? []) as List;
-    print(elements);
+    final List elements = (result ?? []) as List;
+    final List<Sneaker> sneakersList = elements
+        .map((e) => Sneaker.fromJson(e))
+        .toList();
+
     return Scaffold(
       appBar: AppBar(title: const Text("Sneaker Results")),
       body: ListView(
@@ -23,13 +27,8 @@ class SneakerResultPage extends StatelessWidget {
           if (elements.isEmpty)
             const Text("No elements found")
           else
-            ...elements.map((el) {
-              return ShopOfferCard(
-                shopName: el["shopName"],
-                price: el["price"],
-                location: el["googleMapsLink"],
-                shopUrl: el["shopWebsite"],
-              );
+            ...sneakersList.map((el) {
+              return ShopOfferCard(sneaker: el, allSneakers: sneakersList);
               // open product_link if needed
             }),
         ],

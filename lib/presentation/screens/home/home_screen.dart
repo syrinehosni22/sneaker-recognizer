@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:sneaker_recognizer_plateform/presentation/screens/searchResult/search_result.dart';
 import 'dart:typed_data';
+import 'dart:convert';
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:sneaker_recognizer_plateform/presentation/screens/searchResult/search_result.dart';
 import 'package:sneaker_recognizer_plateform/presentation/widgets/SneakerScan/SneakerScanButton.dart';
-import 'package:sneaker_recognizer_plateform/presentation/widgets/cards/popular_sneaker_card.dart';
-import 'package:sneaker_recognizer_plateform/presentation/widgets/cards/special_offer_card.dart';
-import 'package:sneaker_recognizer_plateform/services/sneaker_api_service.dart';
-
-import 'home_controller.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,9 +17,16 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   XFile? _image;
   bool _loading = false;
-
   final picker = ImagePicker();
-  final HomeController controller = HomeController();
+
+  // Membres fictifs pour tri
+  final Set<String> memberShops = {
+    "Nike Store",
+    "Foot Locker",
+    "Decathlon",
+    "JD Sports",
+    "Sneaker World",
+  };
 
   // 📸 Pick image
   Future<void> pickImage() async {
@@ -33,18 +38,41 @@ class _HomeScreenState extends State<HomeScreen> {
     if (pickedFile == null) return;
 
     setState(() {
-      _image = pickedFile; // store XFile instead of File
+      _image = pickedFile;
       _loading = true;
     });
 
     await sendImageAndNavigate(pickedFile);
   }
 
+  // Charger JSON test
+  Future<List<Map<String, dynamic>>> loadTestSneakers() async {
+    final data = await rootBundle.loadString('test_sneaker_results.json');
+    final List<dynamic> jsonList = jsonDecode(data);
+    final results = jsonList.map((e) => e as Map<String, dynamic>).toList();
+
+    // Ajouter flag isMember
+    for (final item in results) {
+      final shopName = item['shop'] ?? "";
+      item['isMember'] = memberShops.contains(shopName);
+    }
+
+    // Tri: membres d'abord
+    results.sort((a, b) {
+      final aMember = a['isMember'] == true ? 1 : 0;
+      final bMember = b['isMember'] == true ? 1 : 0;
+      return bMember.compareTo(aMember);
+    });
+
+    return results;
+  }
+
   Future<void> sendImageAndNavigate(XFile image) async {
     try {
       setState(() => _loading = true);
 
-      final data = await SneakerApiService.getSneakerData(image);
+      // Remplacer par SneakerApiService.getSneakerData(image) plus tard
+      final data = await loadTestSneakers();
 
       setState(() => _loading = false);
 
@@ -58,13 +86,11 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // ✅ BUILD MUST BE HERE
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
-          // Scrollable content
           SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -83,10 +109,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 20),
 
-                // 🖼 IMAGE PREVIEW (TOP OF VIEW)
+                // 🖼 IMAGE PREVIEW
                 if (_image != null)
                   FutureBuilder<Uint8List>(
                     future: _image!.readAsBytes(),
@@ -103,51 +128,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       );
                     },
                   ),
-
-                const SizedBox(height: 25),
-
-                // ⭐ SPECIAL OFFERS
-                const Text(
-                  "Special Offers",
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 12),
-
-                SpecialOfferCard(
-                  imagePath: "assets/images/special_offer.jpg",
-                  title: "30% OFF on Nike Sneakers!",
-                  heightRatio: 0.7,
-                ),
-
-                const SizedBox(height: 30),
-
-                // 🔥 MOST POPULAR
-                const Text(
-                  "Most Popular",
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 12),
-
-                SizedBox(
-                  height: 160,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    children: const [
-                      PopularSneakerCard(
-                        "Nike Air Max",
-                        "assets/images/nike-air-max.png",
-                      ),
-                      PopularSneakerCard(
-                        "Yeezy Boost",
-                        "assets/images/yeezy-bost.png",
-                      ),
-                      PopularSneakerCard(
-                        "Air Jordan 4",
-                        "assets/images/air-jordan-4.png",
-                      ),
-                    ],
-                  ),
-                ),
               ],
             ),
           ),

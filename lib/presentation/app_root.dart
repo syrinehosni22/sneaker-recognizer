@@ -12,11 +12,11 @@ class AppRoot extends StatelessWidget {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthService>();
 
-    if (auth.isLoggedIn) {
-      return const MainScreen(); // menu + content
-    }
+    // if (auth.isLoggedIn) {
+    return const MainScreen(); // menu + content
+    // }
 
-    // 🔐 Not logged in → auth flow
-    return const AuthNavigator();
+    // // 🔐 Not logged in → auth flow
+    // return const AuthNavigator();
   }
 }

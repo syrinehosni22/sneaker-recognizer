@@ -8,16 +8,19 @@ class FavoritesScreen extends StatelessWidget {
 
   final List<Sneaker> favoriteSneakers = [
     Sneaker(
-      id: "azerty12",
-      name: "Nike Air Max",
-      links: ["https://nike.com"],
-      price: 85,
+      title: "Nike Air Force 1 White Sneakers - Amazon",
+      price: 112.50,
+      shop: "amazon.fr",
+      link: "https://www.amazon.fr/dp/B07HDF23A",
+      snippet: "Nike Air Force 1 White. Prix €112.50. Expédié par Amazon.",
     ),
     Sneaker(
-      id: "azerty12",
-      name: "Adidas Ultra Boost",
-      links: ["https://adidas.com"],
-      price: 95,
+      title: "Nike Air Force 1 07 White - Nike Official Store",
+      price: 120.00,
+      shop: "nike.com",
+      link: "https://www.nike.com/fr/t/air-force-1-07",
+      snippet:
+          "Nike Air Force 1 '07 White disponible sur le Nike Store officiel pour €120.",
     ),
   ];
 
@@ -32,8 +35,8 @@ class FavoritesScreen extends StatelessWidget {
               itemBuilder: (context, index) {
                 final sneaker = favoriteSneakers[index];
                 return SneakerCard(
-                  name: sneaker.name,
-                  links: sneaker.links,
+                  name: sneaker.title,
+                  link: sneaker.link.toString(),
                   onLinkTap: (url) async {
                     // open link
                   },

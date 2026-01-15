@@ -12,22 +12,22 @@ class CartService with ChangeNotifier {
   List<CartItem> get items => List.unmodifiable(_items);
 
   /// ADD SNEAKER
-  void addSneaker(Sneaker sneaker) {
-    final index = _items.indexWhere((item) => item.sneaker.id == sneaker.id);
+  // void addSneaker(Sneaker sneaker) {
+  //   final index = _items.indexWhere((item) => item.sneaker.id == sneaker.id);
 
-    if (index >= 0) {
-      _items[index].quantity++;
-    } else {
-      _items.add(CartItem(sneaker: sneaker));
-    }
-    notifyListeners();
-  }
+  //   if (index >= 0) {
+  //     _items[index].quantity++;
+  //   } else {
+  //     _items.add(CartItem(sneaker: sneaker));
+  //   }
+  //   notifyListeners();
+  // }
 
   /// REMOVE SNEAKER
-  void removeSneaker(String sneakerId) {
-    _items.removeWhere((item) => item.sneaker.id == sneakerId);
-    notifyListeners();
-  }
+  // void removeSneaker(String sneakerId) {
+  //   _items.removeWhere((item) => item.sneaker.id == sneakerId);
+  //   notifyListeners();
+  // }
 
   /// CHANGE DELIVERY / PICKUP
   void setOrderType(OrderType type) {
@@ -49,8 +49,7 @@ class CartService with ChangeNotifier {
       "items": _items
           .map(
             (e) => {
-              "sneakerId": e.sneaker.id,
-              "name": e.sneaker.name,
+              "name": e.sneaker.title,
               "quantity": e.quantity,
               "price": e.sneaker.price,
             },

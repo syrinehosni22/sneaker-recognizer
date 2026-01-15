@@ -1,31 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:sneaker_recognizer_plateform/core/constants/colors.dart';
+import 'package:sneaker_recognizer_plateform/domain/models/sneaker.dart';
+import 'package:sneaker_recognizer_plateform/presentation/screens/productDetails/details.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ShopOfferCard extends StatelessWidget {
-  final String? shopName;
-  final String? price;
-  final String? location;
-  final String? shopUrl;
+  final Sneaker sneaker;
+  final List<Sneaker> allSneakers;
 
   const ShopOfferCard({
     super.key,
-    this.shopName,
-    this.price,
-    this.location,
-    this.shopUrl,
+    required this.sneaker,
+    required this.allSneakers,
   });
 
-  // Future<void> _openShop() async {
-  //   if (shopUrl == null || shopUrl!.isEmpty) return;
-  //   final uri = Uri.parse(shopUrl!);
-  //   await launchUrl(uri, mode: LaunchMode.externalApplication);
-  // }
-
-  void _order() {
-    print("order");
+  /// Redirect to the product page
+  void _moreDetails(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            ProductDetailsPage(sneaker: sneaker, allSneakers: allSneakers),
+      ),
+    );
   }
-
-  bool get hasButton => shopUrl != null && shopUrl!.isNotEmpty;
 
   @override
   Widget build(BuildContext context) {
@@ -38,14 +36,14 @@ class ShopOfferCard extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         child: Row(
           children: [
-            /// LEFT SIDE: Shop name and price
+            /// LEFT SIDE: Shop name & price
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (shopName != null && shopName!.isNotEmpty)
+                  if (sneaker.title.isNotEmpty)
                     Text(
-                      shopName!,
+                      sneaker.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -53,11 +51,11 @@ class ShopOfferCard extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                  if (price != null && price!.isNotEmpty)
+                  if (sneaker.price != 0)
                     Padding(
                       padding: const EdgeInsets.only(top: 4),
                       child: Text(
-                        price!,
+                        "€" + sneaker.price.toString(),
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
@@ -65,97 +63,50 @@ class ShopOfferCard extends StatelessWidget {
                         ),
                       ),
                     ),
+                  if (sneaker.shop.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        sneaker.shop,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
 
-            /// RIGHT SIDE: Location icon and Shop button
-            Row(
-              children: [
-                // if (location != null && location!.isNotEmpty)
-                //   IconButton(
-                //     icon: const Icon(Icons.location_on, color: Colors.grey),
-                //     onPressed: () async {
-                //       final uri = Uri.parse(
-                //         "https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(location!)}",
-                //       );
-                //       if (await canLaunchUrl(uri)) {
-                //         await launchUrl(
-                //           uri,
-                //           mode: LaunchMode.externalApplication,
-                //         );
-                //       }
-                //     },
-                //   ),
-                // if (hasButton)
-                //   SizedBox(
-                //     height: 34,
-                //     child: ElevatedButton(
-                //       onPressed: _openShop,
-                //       style: ElevatedButton.styleFrom(
-                //         backgroundColor: Colors.black,
-                //         elevation: 0,
-                //         padding: const EdgeInsets.symmetric(horizontal: 12),
-                //         shape: RoundedRectangleBorder(
-                //           borderRadius: BorderRadius.circular(10),
-                //         ),
-                //       ),
-                //       child: Row(
-                //         mainAxisSize: MainAxisSize.min,
-                //         children: const [
-                //           Text(
-                //             "Shop",
-                //             style: TextStyle(
-                //               color: Colors.white,
-                //               fontSize: 13,
-                //               fontWeight: FontWeight.w600,
-                //             ),
-                //           ),
-                //           SizedBox(width: 6),
-                //           Icon(
-                //             Icons.arrow_forward,
-                //             size: 14,
-                //             color: Colors.white,
-                //           ),
-                //         ],
-                //       ),
-                //     ),
-                //   ),
-                if (hasButton)
-                  SizedBox(
-                    height: 34,
-                    child: ElevatedButton(
-                      onPressed: _order,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF7C3AED),
-                        elevation: 0,
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: const [
-                          Text(
-                            "Order",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          SizedBox(width: 6),
-                          Icon(
-                            Icons.arrow_forward,
-                            size: 14,
-                            color: Colors.white,
-                          ),
-                        ],
+            /// RIGHT SIDE: More details button
+            SizedBox(
+              height: 34,
+              child: ElevatedButton(
+                onPressed: () => _moreDetails(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryButton,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    Text(
+                      "View",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                  ),
-              ],
+                    SizedBox(width: 6),
+                    Icon(Icons.open_in_new, size: 14, color: Colors.white),
+                  ],
+                ),
+              ),
             ),
           ],
         ),

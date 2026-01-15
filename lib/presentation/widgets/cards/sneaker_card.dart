@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 
 class SneakerCard extends StatelessWidget {
   final String name;
-  final List<String> links;
+  final String link; // ✅ single link
   final Function(String) onLinkTap;
 
   const SneakerCard({
     super.key,
     required this.name,
-    required this.links,
+    required this.link,
     required this.onLinkTap,
   });
 
@@ -23,27 +23,20 @@ class SneakerCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Title
             Text(
               name,
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
-            Wrap(
-              spacing: 8,
-              children: links
-                  .map(
-                    (link) => GestureDetector(
-                      onTap: () => onLinkTap(link),
-                      child: Chip(
-                        label: Text(
-                          link,
-                          style: const TextStyle(color: Colors.white),
-                        ),
-                        backgroundColor: Colors.deepPurple,
-                      ),
-                    ),
-                  )
-                  .toList(),
+
+            // Link as a single Chip
+            GestureDetector(
+              onTap: () => onLinkTap(link),
+              child: Chip(
+                label: Text(link, style: const TextStyle(color: Colors.white)),
+                backgroundColor: Colors.deepPurple,
+              ),
             ),
           ],
         ),
