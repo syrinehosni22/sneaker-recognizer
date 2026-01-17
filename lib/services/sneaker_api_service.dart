@@ -20,7 +20,8 @@ class SneakerApiService {
 
     // 4 Prices
     // get prices from the backend
-
+    //  final rawResults =
+    //         await SneakerDatabaseService.getPricesByModel(model);
     //
     // final raw = await googleSearchProducts(model);
     // final results = ResultMapper.mapBase(raw);
