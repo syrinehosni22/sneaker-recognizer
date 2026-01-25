@@ -1,10 +1,10 @@
-class Sneaker {
+class Product {
   final String id;
   final String name;
   final List<String> links;
   final double price;
 
-  Sneaker({
+  Product({
     required this.id,
     required this.name,
     required this.links,

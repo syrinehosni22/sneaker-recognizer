@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-class SneakerCard extends StatelessWidget {
+class ProductCard extends StatelessWidget {
   final String name;
   final List<String> links;
   final Function(String) onLinkTap;
 
-  const SneakerCard({
+  const ProductCard({
     super.key,
     required this.name,
     required this.links,

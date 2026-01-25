@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sneaker_recognizer_plateform/domain/models/cart_item.dart';
 import 'package:sneaker_recognizer_plateform/presentation/widgets/cards/search_result_card.dart';
 
 class SneakerResultPage extends StatelessWidget {
@@ -9,7 +10,7 @@ class SneakerResultPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final List elements = (result['results'] ?? []) as List;
-    print(elements);
+
     return Scaffold(
       appBar: AppBar(title: const Text("Sneaker Results")),
       body: ListView(
@@ -20,21 +21,30 @@ class SneakerResultPage extends StatelessWidget {
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
+
           if (elements.isEmpty)
             const Text("No elements found")
           else
             ...elements.map((el) {
-              return ShopOfferCard(
-                shopName: el["shopName"],
-                price: el["price"],
-                location: el["googleMapsLink"],
-                shopUrl: el["shopWebsite"],
+              // Assuming each 'el' is a Map<String, dynamic> with 'id', 'name', 'price', etc.
+              final CartItem product = CartItem(
+                id: el['id']?.toString() ?? '',
+                name: el['name'] ?? 'Unknown',
+                price: (el['price'] is int)
+                    ? el['price'] as int
+                    : ((el['price'] is double)
+                          ? ((el['price'] as double) * 100).toInt()
+                          : 0), // Convert to cents if needed
+                // imageUrl: el['imageUrl'] ?? '',
               );
-              // open product_link if needed
-            }),
+
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: ShopOfferCard(product: product, canOrder: true),
+              );
+            }).toList(),
         ],
       ),
     );
-    // return Scaffold(body: const SizedBox());
   }
 }

@@ -63,6 +63,7 @@ class _RegisterPageState extends State<RegisterPage> {
       );
 
       setState(() => _step = RegisterStep.code);
+
     } catch (e) {
       setState(() {
         _error = e.toString().replaceAll('Exception:', '').trim();
@@ -73,10 +74,10 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Future<void> _verifyCode() async {
-    if (_codeCtrl.text.length != 6) {
-      setState(() => _error = 'Invalid verification code');
-      return;
-    }
+    // if (_codeCtrl.text.length != 6) {
+    //   setState(() => _error = 'Invalid verification code');
+    //   return;
+    // }
 
     setState(() {
       _loading = true;
@@ -189,14 +190,14 @@ class _RegisterPageState extends State<RegisterPage> {
               ],
 
               // -------- STEP 2 : CODE --------
-              if (_step == RegisterStep.code) ...[
-                TextField(
-                  controller: _codeCtrl,
-                  keyboardType: TextInputType.number,
-                  maxLength: 6,
-                  decoration: _dec('Verification code'),
-                ),
-              ],
+              // if (_step == RegisterStep.code) ...[
+              //   TextField(
+              //     controller: _codeCtrl,
+              //     keyboardType: TextInputType.number,
+              //     maxLength: 6,
+              //     decoration: _dec('Verification code'),
+              //   ),
+              // ],
 
               // -------- STEP 3 : PASSWORD --------
               if (_step == RegisterStep.password) ...[

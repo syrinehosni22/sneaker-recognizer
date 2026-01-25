@@ -1,10 +1,15 @@
-import 'sneaker.dart';
-
 class CartItem {
-  final Sneaker sneaker;
+  final String id;
+  final String name;
+  final int price; // in cents
+  // final String imageUrl;
   int quantity;
 
-  CartItem({required this.sneaker, this.quantity = 1});
-
-  double get total => sneaker.price * quantity;
+  CartItem({
+    required this.id,
+    required this.name,
+    required this.price,
+    // required this.imageUrl,
+    this.quantity = 1,
+  });
 }

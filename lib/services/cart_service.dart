@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../domain/models/cart_item.dart';
-import '../domain/models/sneaker.dart';
+import '../domain/models/product.dart';
 import '../domain/models/order.dart';
 
 class CartService with ChangeNotifier {
@@ -11,21 +11,30 @@ class CartService with ChangeNotifier {
 
   List<CartItem> get items => List.unmodifiable(_items);
 
-  /// ADD SNEAKER
-  void addSneaker(Sneaker sneaker) {
-    final index = _items.indexWhere((item) => item.sneaker.id == sneaker.id);
+  /// ADD Product
+  void addProduct(Product product) {
+    final index = _items.indexWhere((item) => item.id == product.id);
 
     if (index >= 0) {
       _items[index].quantity++;
     } else {
-      _items.add(CartItem(sneaker: sneaker));
+      _items.add(
+        CartItem(
+          id: product.id,
+          name: product.name,
+          price: product.price.toInt(),
+          // imageUrl: product.imageUrl,
+          quantity: 1, // default when first added
+        ),
+      );
     }
+
     notifyListeners();
   }
 
-  /// REMOVE SNEAKER
-  void removeSneaker(String sneakerId) {
-    _items.removeWhere((item) => item.sneaker.id == sneakerId);
+  /// REMOVE Product
+  void removeProduct(String productId) {
+    _items.removeWhere((item) => item.id == productId);
     notifyListeners();
   }
 
@@ -36,7 +45,7 @@ class CartService with ChangeNotifier {
   }
 
   /// TOTALS
-  double get subtotal => _items.fold(0, (sum, item) => sum + item.total);
+  double get subtotal => _items.fold(0, (sum, item) => sum + item.price);
 
   double get total =>
       subtotal + (orderType == OrderType.delivery ? deliveryFee : 0);
@@ -49,10 +58,10 @@ class CartService with ChangeNotifier {
       "items": _items
           .map(
             (e) => {
-              "sneakerId": e.sneaker.id,
-              "name": e.sneaker.name,
+              "productId": e.id,
+              "name": e.name,
               "quantity": e.quantity,
-              "price": e.sneaker.price,
+              "price": e.price,
             },
           )
           .toList(),

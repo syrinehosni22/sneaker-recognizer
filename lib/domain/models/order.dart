@@ -9,6 +9,6 @@ class Order {
 
   Order({required this.items, required this.type, this.deliveryFee = 0});
 
-  double get subtotal => items.fold(0, (sum, item) => sum + item.total);
+  double get subtotal => items.fold(0, (sum, item) => sum + item.price);
   double get total => subtotal + (type == OrderType.delivery ? deliveryFee : 0);
 }

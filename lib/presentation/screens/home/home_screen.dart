@@ -7,8 +7,6 @@ import 'package:sneaker_recognizer_plateform/presentation/widgets/cards/popular_
 import 'package:sneaker_recognizer_plateform/presentation/widgets/cards/special_offer_card.dart';
 import 'package:sneaker_recognizer_plateform/services/sneaker_api_service.dart';
 
-import 'home_controller.dart';
-
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -21,7 +19,6 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _loading = false;
 
   final picker = ImagePicker();
-  final HomeController controller = HomeController();
 
   // 📸 Pick image
   Future<void> pickImage() async {
@@ -44,7 +41,7 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       setState(() => _loading = true);
 
-      final data = await SneakerApiService.getSneakerData(image);
+      final data = await SneakerApiService.getProductData(image);
 
       setState(() => _loading = false);
 
