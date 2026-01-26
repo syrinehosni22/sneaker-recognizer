@@ -37,7 +37,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => CartProvider()), // ✅ added
       ],
       child: MaterialApp(
-        title: 'Sneaker Recognizer',
+        title: 'Product Recognizer',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),

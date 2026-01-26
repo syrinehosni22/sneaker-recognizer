@@ -22,8 +22,8 @@ class CartService with ChangeNotifier {
         CartItem(
           id: product.id,
           name: product.name,
-          price: product.price.toInt(),
-          // imageUrl: product.imageUrl,
+          price: product.price,
+          imageUrl: product.imageUrl,
           quantity: 1, // default when first added
         ),
       );

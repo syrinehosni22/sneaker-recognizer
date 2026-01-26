@@ -10,9 +10,10 @@ class SneakerResultPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final List elements = (result['results'] ?? []) as List;
+    print(elements);
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Sneaker Results")),
+      appBar: AppBar(title: const Text("Product Results")),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -29,13 +30,11 @@ class SneakerResultPage extends StatelessWidget {
               // Assuming each 'el' is a Map<String, dynamic> with 'id', 'name', 'price', etc.
               final CartItem product = CartItem(
                 id: el['id']?.toString() ?? '',
-                name: el['name'] ?? 'Unknown',
-                price: (el['price'] is int)
-                    ? el['price'] as int
-                    : ((el['price'] is double)
-                          ? ((el['price'] as double) * 100).toInt()
-                          : 0), // Convert to cents if needed
-                // imageUrl: el['imageUrl'] ?? '',
+                name: el['shopName'] ?? 'Unknown',
+                price: double.parse(
+                  el['price'].replaceAll("€", "").replaceAll(",", ".").trim(),
+                ),
+                imageUrl: el['thumbnail'] ?? '',
               );
 
               return Padding(

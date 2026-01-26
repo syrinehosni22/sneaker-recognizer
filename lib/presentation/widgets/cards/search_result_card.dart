@@ -53,7 +53,7 @@ class ShopOfferCard extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(
-                      "\$${(product.price / 100).toStringAsFixed(2)}",
+                      "\$${(product.price)}",
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
@@ -66,7 +66,7 @@ class ShopOfferCard extends StatelessWidget {
             ),
 
             /// RIGHT SIDE: Order button
-            if (canOrder)
+            if (canOrder == true)
               SizedBox(
                 height: 34,
                 child: ElevatedButton(
