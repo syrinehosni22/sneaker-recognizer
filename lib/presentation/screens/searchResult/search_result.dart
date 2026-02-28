@@ -7,6 +7,20 @@ class SneakerResultPage extends StatelessWidget {
 
   const SneakerResultPage({super.key, required this.result});
 
+  /// Safely parse any value to double
+  double parseToDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is num) return value.toDouble();
+
+    final cleaned = value
+        .toString()
+        .replaceAll(RegExp(r'[^\d,.-]'), '') // keep digits, dot, comma, minus
+        .replaceAll(',', '.')
+        .trim();
+
+    return double.tryParse(cleaned) ?? 0.0;
+  }
+
   @override
   Widget build(BuildContext context) {
     final List elements = (result['results'] ?? []) as List;
@@ -27,13 +41,11 @@ class SneakerResultPage extends StatelessWidget {
             const Text("No elements found")
           else
             ...elements.map((el) {
-              // Assuming each 'el' is a Map<String, dynamic> with 'id', 'name', 'price', etc.
+              // Create CartItem safely
               final CartItem product = CartItem(
                 id: el['id']?.toString() ?? '',
                 name: el['shopName'] ?? 'Unknown',
-                price: double.parse(
-                  el['price'].replaceAll("€", "").replaceAll(",", ".").trim(),
-                ),
+                price: parseToDouble(el['price']),
                 imageUrl: el['thumbnail'] ?? '',
               );
 
@@ -41,7 +53,7 @@ class SneakerResultPage extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 12),
                 child: ShopOfferCard(product: product, canOrder: true),
               );
-            }),
+            }).toList(),
         ],
       ),
     );

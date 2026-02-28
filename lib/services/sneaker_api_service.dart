@@ -61,7 +61,7 @@ class SneakerApiService {
               {
                 "type": "input_text",
                 "text":
-                    "Identify the exact sneaker model (brand, model, colorway). Reply only with the model name.",
+                    "Identify the exact product model (brand, model, colorway). Reply  with the exact model name brand colorway.",
               },
               {"type": "input_image", "image_url": imageUrl},
             ],
