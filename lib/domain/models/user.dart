@@ -3,11 +3,13 @@ class User {
   final String email;
   final String name;
   final bool isSubscribed;
+  final String? token;
 
   User({
     required this.id,
     required this.email,
     required this.name,
+     this.token,
     this.isSubscribed = false,
   });
 

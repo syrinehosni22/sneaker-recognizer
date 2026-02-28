@@ -1,11 +1,16 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+
+// --- EXISTING IMPORTS ---
 import 'package:sneaker_recognizer_plateform/presentation/screens/searchResult/search_result.dart';
-import 'dart:typed_data';
 import 'package:sneaker_recognizer_plateform/presentation/widgets/SneakerScan/SneakerScanButton.dart';
 import 'package:sneaker_recognizer_plateform/presentation/widgets/cards/popular_sneaker_card.dart';
-import 'package:sneaker_recognizer_plateform/presentation/widgets/cards/special_offer_card.dart';
 import 'package:sneaker_recognizer_plateform/services/sneaker_api_service.dart';
+
+// --- NEW IMPORTS ---
+import 'package:sneaker_recognizer_plateform/presentation/widgets/cards/offer_carousel.dart';
+import 'package:sneaker_recognizer_plateform/presentation/screens/offer/add_offer.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -17,34 +22,27 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   XFile? _image;
   bool _loading = false;
-
   final picker = ImagePicker();
 
-  // 📸 Pick image
   Future<void> pickImage() async {
     final XFile? pickedFile = await picker.pickImage(
       source: ImageSource.camera,
       imageQuality: 85,
     );
-
     if (pickedFile == null) return;
-
     setState(() {
-      _image = pickedFile; // store XFile instead of File
+      _image = pickedFile;
       _loading = true;
     });
-
     await sendImageAndNavigate(pickedFile);
   }
 
   Future<void> sendImageAndNavigate(XFile image) async {
     try {
       setState(() => _loading = true);
-
       final data = await SneakerApiService.getProductData(image);
-
       setState(() => _loading = false);
-
+      if (!mounted) return;
       Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => SneakerResultPage(result: data)),
@@ -55,18 +53,32 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // ✅ BUILD MUST BE HERE
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // ✅ Floating action button to add new offers
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.black,
+        child: const Icon(Icons.add, color: Colors.white),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const AddOfferScreen()),
+          ).then((_) {
+            // When returning from AddOfferScreen, refresh the UI
+            setState(() {});
+          });
+        },
+      ),
       body: Stack(
         children: [
-          // Scrollable content
           SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                const SizedBox(height: 50),
+
                 // 🔍 SEARCH BAR
                 TextField(
                   decoration: InputDecoration(
@@ -83,38 +95,35 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 const SizedBox(height: 20),
 
-                // 🖼 IMAGE PREVIEW (TOP OF VIEW)
-                if (_image != null)
+                // 🖼 IMAGE PREVIEW (Shows after camera scan)
+                if (_image != null) ...[
                   FutureBuilder<Uint8List>(
                     future: _image!.readAsBytes(),
                     builder: (context, snapshot) {
-                      if (!snapshot.hasData)
-                        return const CircularProgressIndicator();
+                      if (!snapshot.hasData) return const LinearProgressIndicator();
                       return ClipRRect(
                         borderRadius: BorderRadius.circular(16),
                         child: Image.memory(
                           snapshot.data!,
                           height: 200,
+                          width: double.infinity,
                           fit: BoxFit.cover,
                         ),
                       );
                     },
                   ),
+                  const SizedBox(height: 25),
+                ],
 
-                const SizedBox(height: 25),
-
-                // ⭐ SPECIAL OFFERS
+                // ⭐ SPECIAL OFFERS (Now Dynamic using Icons)
                 const Text(
                   "Special Offers",
                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 12),
 
-                SpecialOfferCard(
-                  imagePath: "assets/images/special_offer.jpg",
-                  title: "30% OFF on Nike Sneakers!",
-                  heightRatio: 0.7,
-                ),
+                // Use the component we built earlier
+                 DynamicOfferCarousel(),
 
                 const SizedBox(height: 30),
 
@@ -130,18 +139,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: ListView(
                     scrollDirection: Axis.horizontal,
                     children: const [
-                      PopularSneakerCard(
-                        "Nike Air Max",
-                        "assets/images/nike-air-max.png",
-                      ),
-                      PopularSneakerCard(
-                        "Yeezy Boost",
-                        "assets/images/yeezy-bost.png",
-                      ),
-                      PopularSneakerCard(
-                        "Air Jordan 4",
-                        "assets/images/air-jordan-4.png",
-                      ),
+                      PopularSneakerCard("Nike Air Max", "assets/images/nike-air-max.png"),
+                      PopularSneakerCard("Yeezy Boost", "assets/images/yeezy-bost.png"),
+                      PopularSneakerCard("Air Jordan 4", "assets/images/air-jordan-4.png"),
                     ],
                   ),
                 ),
@@ -149,18 +149,18 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
 
-          // 📸 Floating scan button
+          // 📸 Floating scan button (Positioned at top right)
           Positioned(
-            top: 20,
+            top: 40,
             right: 20,
             child: SneakerScanButton(onTap: pickImage),
           ),
 
-          // ⏳ LOADING OVERLAY
+          // ⏳ LOADING OVERLAY (Blurs background during AI scan)
           if (_loading)
             Container(
               color: Colors.black.withOpacity(0.4),
-              child: const Center(child: CircularProgressIndicator()),
+              child: const Center(child: CircularProgressIndicator(color: Colors.white)),
             ),
         ],
       ),

@@ -16,21 +16,23 @@ class ProductDetailPage extends StatelessWidget {
         totalAmount,
       );
 
-      // await Stripe.instance.initPaymentSheet(
-      //   paymentSheetParameters: SetupPaymentSheetParameters(
-      //     paymentIntentClientSecret: clientSecret,
-      //     merchantDisplayName: "IOMall",
-      //   ),
-      // );
+      await Stripe.instance.initPaymentSheet(
+        paymentSheetParameters: SetupPaymentSheetParameters(
+          paymentIntentClientSecret: clientSecret,
+          merchantDisplayName: "IOMall",
+        ),
+      );
 
-      // await Stripe.instance.presentPaymentSheet();
+      await Stripe.instance.presentPaymentSheet();
 
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text("✅ Payment successful")));
 
       Provider.of<CartProvider>(context, listen: false).clear();
+      // redirection to dashboard
     } catch (e) {
+      print(e);
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text("❌ Payment failed: $e")));

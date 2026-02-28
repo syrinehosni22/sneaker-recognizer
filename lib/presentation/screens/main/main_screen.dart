@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../home/home_screen.dart';
 import '../search/search_screen.dart';
-import '../favorites/favorites_screen.dart';
 import '../profile/profile_screen.dart';
 
 class MainScreen extends StatefulWidget {

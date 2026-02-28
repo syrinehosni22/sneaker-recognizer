@@ -41,7 +41,7 @@ class SneakerResultPage extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 12),
                 child: ShopOfferCard(product: product, canOrder: true),
               );
-            }).toList(),
+            }),
         ],
       ),
     );

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:sneaker_recognizer_plateform/services/offer_service.dart';
 import '../domain/models/user.dart';
 
 class AuthService with ChangeNotifier {
@@ -39,9 +40,13 @@ class AuthService with ChangeNotifier {
     }
 
     final data = jsonDecode(res.body);
-    _currentUser = User.fromJson(data["data"]["user"]);
-    _token = data["token"];
 
+    _currentUser = User.fromJson(data["data"]["user"]);
+    _token = _currentUser?.token;
+    print(data["data"]["user"]);
+    print("token");
+    print(_token);
+    OfferService.setToken(_token.toString());
     notifyListeners();
   }
 
@@ -72,29 +77,25 @@ class AuthService with ChangeNotifier {
 
   /// STEP 1️⃣ : Send verification code (name + email)
   Future<void> sendVerificationEmail(String name, String email) async {
-  //   final res ={
-  //     message: "Verification code sent",
-  //   }
-  //   = await http.post(
-  //     Uri.parse("$baseUrl/auth/send-code"),
-  //     headers: _publicHeaders,
-  //     body: jsonEncode({"name": name, "email": email}),
-  //   );
+    final res =  await http.post(
+      Uri.parse("$baseUrl/auth/send-code"),
+      headers: _publicHeaders,
+      body: jsonEncode({"name": name, "email": email}),
+    );
 
-
-  //   if (res.statusCode != 200) {
-  //     final error = jsonDecode(res.body);
-  //     throw Exception(error["message"] ?? "Failed to send verification code");
-  //   }
+    if (res.statusCode != 200) {
+      final error = jsonDecode(res.body);
+      throw Exception(error["message"] ?? "Failed to send verification code");
+    }
   }
 
   /// STEP 2️⃣ : Verify code (email + code)
   Future<void> verifyCode(String email, String code) async {
-  //   final res = await http.post(
-  //     Uri.parse("$baseUrl/auth/verify-code"),
-  //     headers: _publicHeaders,
-  //     body: jsonEncode({"email": email, "code": code}),
-  //   );
+    //   final res = await http.post(
+    //     Uri.parse("$baseUrl/auth/verify-code"),
+    //     headers: _publicHeaders,
+    //     body: jsonEncode({"email": email, "code": code}),
+    //   );
 
     // if (res.statusCode != 200) {
     //   final error = jsonDecode(res.body);
