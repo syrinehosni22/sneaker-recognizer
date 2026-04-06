@@ -2,9 +2,10 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart'; // ✅ Added this for debugPrint
 import 'package:http/http.dart' as http;
 import '../domain/models/Offer.dart';
+import 'package:sneaker_recognizer_plateform/core/constants/api_constants.dart';
 
 class OfferService {
-  static const String _baseUrl = 'http://localhost:5000/api/offers';
+  static const String _baseUrl = '${ApiConstants.baseUrl}/api/offers';
 
   static String? _internalToken;
 

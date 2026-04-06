@@ -1,16 +1,15 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../services/cart_service.dart';
+import 'package:sneaker_recognizer_plateform/core/constants/api_constants.dart';
 
 class OrderService {
-  static const String baseUrl = "https://api.yourbackend.com";
-
   Future<String> createOrderAndPayment({
     required CartService cart,
     required String token,
   }) async {
     final res = await http.post(
-      Uri.parse("$baseUrl/orders"),
+      Uri.parse("${ApiConstants.baseUrl}/api/orders"),
       headers: {
         "Content-Type": "application/json",
         "Authorization": "Bearer $token",

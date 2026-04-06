@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:sneaker_recognizer_plateform/core/constants/api_constants.dart';
 
 class SneakerApiService {
   // ===============================
@@ -61,7 +62,7 @@ class SneakerApiService {
               {
                 "type": "input_text",
                 "text":
-                    "Identify the exact product model (brand, model, colorway). Reply  with the exact model name brand colorway.",
+                    "Identify the exact product model. Reply  with just the exact model without any extra words.",
               },
               {"type": "input_image", "image_url": imageUrl},
             ],
@@ -129,7 +130,7 @@ class SneakerApiService {
 
       // 4️⃣ Get shops from Express backend
       final response = await http.get(
-        Uri.parse('http://localhost:5000/api/shops'),
+        Uri.parse('${ApiConstants.baseUrl}/api/shops'),
       );
 
       if (response.statusCode != 200) {
@@ -151,6 +152,7 @@ class SneakerApiService {
         print(availableShops.contains(shopName.toLowerCase()));
 
         results.add({
+          "extracted_price": item['extracted_price'],
           "price": item['price'].toString(),
           "currency": item['currency'].toString(),
           "thumbnail": item['thumbnail'],

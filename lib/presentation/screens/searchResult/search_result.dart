@@ -7,45 +7,66 @@ class SneakerResultPage extends StatelessWidget {
 
   const SneakerResultPage({super.key, required this.result});
 
-  /// Safely parse any value to double
-  double parseToDouble(dynamic value) {
-    if (value == null) return 0.0;
-    if (value is num) return value.toDouble();
-
-    final cleaned = value
-        .toString()
-        .replaceAll(RegExp(r'[^\d,.-]'), '') // keep digits, dot, comma, minus
-        .replaceAll(',', '.')
-        .trim();
-
-    return double.tryParse(cleaned) ?? 0.0;
-  }
-
   @override
   Widget build(BuildContext context) {
+    // Safely cast the results list from the API map.
+    // If 'results' is null, it defaults to an empty list.
     final List elements = (result['results'] ?? []) as List;
-    print(elements);
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Product Results")),
+      backgroundColor:
+          Colors.grey[50], // Slight background tint for better card contrast
+      appBar: AppBar(
+        title: const Text(
+          "Product Results",
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0,
+        centerTitle: true,
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           const Text(
-            "Prices",
+            "Available Offers",
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
 
+          // Check if the list is empty
           if (elements.isEmpty)
-            const Text("No elements found")
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.only(top: 60),
+                child: Column(
+                  children: [
+                    Icon(Icons.search_off, size: 64, color: Colors.grey),
+                    SizedBox(height: 16),
+                    Text(
+                      "No elements found",
+                      style: TextStyle(color: Colors.grey, fontSize: 16),
+                    ),
+                  ],
+                ),
+              ),
+            )
           else
+            // Map each element to a ShopOfferCard
             ...elements.map((el) {
-              // Create CartItem safely
+              // FIX: Robust price parsing.
+              // We check if it's a number, convert to double, otherwise default to 0.0.
+              final dynamic rawPrice = el['extracted_price'];
+              final double priceData = (rawPrice is num)
+                  ? rawPrice.toDouble()
+                  : 0.0;
+
+              // Create the CartItem model with safe null-coalescing
               final CartItem product = CartItem(
                 id: el['id']?.toString() ?? '',
-                name: el['shopName'] ?? 'Unknown',
-                price: parseToDouble(el['price']),
+                name: el['title'] ?? el['shopName'] ?? 'Unknown Product',
+                price: priceData,
                 imageUrl: el['thumbnail'] ?? '',
               );
 

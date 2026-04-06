@@ -3,10 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:sneaker_recognizer_plateform/services/offer_service.dart';
 import '../domain/models/user.dart';
+import 'package:sneaker_recognizer_plateform/core/constants/api_constants.dart';
 
 class AuthService with ChangeNotifier {
-  static const String baseUrl = "http://localhost:5000/api";
-
   User? _currentUser;
   String? _token;
 
@@ -29,7 +28,7 @@ class AuthService with ChangeNotifier {
   /// ---------------- LOGIN ----------------
   Future<void> login(String email, String password) async {
     final res = await http.post(
-      Uri.parse("$baseUrl/auth/login"),
+      Uri.parse("${ApiConstants.baseUrl}/api/auth/login"),
       headers: _publicHeaders,
       body: jsonEncode({"email": email, "password": password}),
     );
@@ -54,7 +53,7 @@ class AuthService with ChangeNotifier {
   /// You can keep it if used elsewhere
   Future<void> register(String name, String email, String password) async {
     final res = await http.post(
-      Uri.parse("$baseUrl/auth/register"),
+      Uri.parse("${ApiConstants.baseUrl}/api/auth/register"),
       headers: _publicHeaders,
       body: jsonEncode({"name": name, "email": email, "password": password}),
     );
@@ -77,8 +76,8 @@ class AuthService with ChangeNotifier {
 
   /// STEP 1️⃣ : Send verification code (name + email)
   Future<void> sendVerificationEmail(String name, String email) async {
-    final res =  await http.post(
-      Uri.parse("$baseUrl/auth/send-code"),
+    final res = await http.post(
+      Uri.parse("${ApiConstants.baseUrl}/api/auth/send-code"),
       headers: _publicHeaders,
       body: jsonEncode({"name": name, "email": email}),
     );
@@ -92,7 +91,7 @@ class AuthService with ChangeNotifier {
   /// STEP 2️⃣ : Verify code (email + code)
   Future<void> verifyCode(String email, String code) async {
     //   final res = await http.post(
-    //     Uri.parse("$baseUrl/auth/verify-code"),
+    //     Uri.parse("${ApiConstants.baseUrl}/auth/verify-code"),
     //     headers: _publicHeaders,
     //     body: jsonEncode({"email": email, "code": code}),
     //   );
@@ -108,7 +107,7 @@ class AuthService with ChangeNotifier {
   /// STEP 3️⃣ : Create account (email + password)
   Future<void> createAccount(String name, String email, String password) async {
     final res = await http.post(
-      Uri.parse("$baseUrl/auth/register"),
+      Uri.parse("${ApiConstants.baseUrl}/api/auth/register"),
       headers: _publicHeaders,
       body: jsonEncode({"name": name, "email": email, "password": password}),
     );
@@ -128,7 +127,7 @@ class AuthService with ChangeNotifier {
   /// ---------------- RESET PASSWORD ----------------
   Future<void> resetPassword(String email) async {
     final res = await http.post(
-      Uri.parse("$baseUrl/auth/reset-password"),
+      Uri.parse("${ApiConstants.baseUrl}/api/auth/reset-password"),
       headers: _publicHeaders,
       body: jsonEncode({"email": email}),
     );
@@ -147,7 +146,7 @@ class AuthService with ChangeNotifier {
     if (_currentUser == null) return;
 
     final res = await http.put(
-      Uri.parse("$baseUrl/users/me"),
+      Uri.parse("${ApiConstants.baseUrl}/api/users/me"),
       headers: _authHeaders,
       body: jsonEncode({"name": name, "email": email}),
     );
@@ -166,7 +165,7 @@ class AuthService with ChangeNotifier {
     if (_currentUser == null) return;
 
     final res = await http.post(
-      Uri.parse("$baseUrl/subscription/subscribe"),
+      Uri.parse("${ApiConstants.baseUrl}/api/subscription/subscribe"),
       headers: _authHeaders,
     );
 

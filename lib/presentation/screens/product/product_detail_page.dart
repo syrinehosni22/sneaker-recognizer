@@ -12,31 +12,56 @@ class ProductDetailPage extends StatelessWidget {
 
   Future<void> _pay(BuildContext context, double totalAmount) async {
     try {
-      final clientSecret = await PaymentService.createPaymentIntent(
-        totalAmount,
-      );
+      // 1. Fetch data from your backend
+      // Ensure PaymentService uses 10.0.2.2 for Android debugging!
+      final Map<String, dynamic> paymentData =
+          await PaymentService.createPaymentIntent(totalAmount);
 
+      // 2. Initialize the Payment Sheet
       await Stripe.instance.initPaymentSheet(
         paymentSheetParameters: SetupPaymentSheetParameters(
-          paymentIntentClientSecret: clientSecret,
-          merchantDisplayName: "IOMall",
+          paymentIntentClientSecret: paymentData['paymentIntent'],
+          customerEphemeralKeySecret: paymentData['ephemeralKey'],
+          customerId: paymentData['customer'],
+          merchantDisplayName: 'Sneaker Recognizer',
+          // Set to true if you want to support Apple/Google Pay
+          applePay: const PaymentSheetApplePay(merchantCountryCode: 'FR'),
+          googlePay: const PaymentSheetGooglePay(merchantCountryCode: 'FR'),
+          style: ThemeMode.system,
         ),
       );
 
+      // 3. Display the Sheet
       await Stripe.instance.presentPaymentSheet();
 
+      // 4. Success handling
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text("✅ Payment successful")));
 
       Provider.of<CartProvider>(context, listen: false).clear();
-      // redirection to dashboard
+
+      // TODO: Navigator.of(context).pushNamed('/dashboard');
     } catch (e) {
-      print(e);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("❌ Payment failed: $e")));
+      if (e is StripeException) {
+        // Handle "User cancelled" specifically so you don't show a scary red error
+        if (e.error.code == FailureCode.Canceled) {
+          debugPrint("User cancelled the payment");
+          return;
+        }
+        _showError(context, "Stripe Error: ${e.error.localizedMessage}");
+      } else {
+        debugPrint("General Error: $e");
+        _showError(context, "Connection failed. Please check your internet.");
+      }
     }
+  }
+
+  // Helper for cleaner code
+  void _showError(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
+    );
   }
 
   @override

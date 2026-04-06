@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart'; // 1. Import the intl package
 import 'package:sneaker_recognizer_plateform/domain/models/cart_item.dart';
 import 'package:sneaker_recognizer_plateform/presentation/screens/product/product_detail_page.dart';
 
 class ShopOfferCard extends StatelessWidget {
-  final CartItem product; // ✅ Added CartItem field
+  final CartItem product;
   final bool canOrder;
 
   const ShopOfferCard({
@@ -12,20 +13,23 @@ class ShopOfferCard extends StatelessWidget {
     this.canOrder = false,
   });
 
-  // ✅ Navigate to ProductDetailPage with a CartItem
   void _order(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => ProductDetailPage(
-          product: product, // Pass the CartItem directly
-        ),
-      ),
+      MaterialPageRoute(builder: (_) => ProductDetailPage(product: product)),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    // 2. Create the formatter
+    // 'de_DE' yields 1.250,00 € | 'en_IE' yields €1,250.00
+    final formatter = NumberFormat.currency(
+      locale: 'de_DE',
+      symbol: '€',
+      decimalDigits: 2,
+    );
+
     return Card(
       color: Colors.white,
       elevation: 4,
@@ -35,7 +39,6 @@ class ShopOfferCard extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         child: Row(
           children: [
-            /// LEFT SIDE: Shop name & price
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -53,10 +56,12 @@ class ShopOfferCard extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(
-                      "\$${(product.price)}",
+                      // 3. Apply the formatter here
+                      formatter.format(product.price),
                       style: const TextStyle(
                         fontSize: 14,
-                        fontWeight: FontWeight.w500,
+                        fontWeight:
+                            FontWeight.w600, // Slightly bolder for readability
                         color: Colors.black,
                       ),
                     ),
@@ -64,9 +69,7 @@ class ShopOfferCard extends StatelessWidget {
                 ],
               ),
             ),
-
-            /// RIGHT SIDE: Order button
-            if (canOrder == true)
+            if (canOrder)
               SizedBox(
                 height: 34,
                 child: ElevatedButton(
