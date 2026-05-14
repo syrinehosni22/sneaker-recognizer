@@ -13,9 +13,16 @@ class SneakerResultPage extends StatelessWidget {
     final List<Sneaker> sneakersList = elements
         .map((e) => Sneaker.fromJson(e))
         .toList();
+    ListView.builder(
+      itemCount: sneakersList.take(5).length,
+      itemBuilder: (context, index) {
+        final sneaker = sneakersList.take(5).toList()[index];
 
+        return Text(sneaker.title);
+      },
+    );
     return Scaffold(
-      appBar: AppBar(title: const Text("Sneaker Results")),
+      appBar: AppBar(title: const Text("Results")),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

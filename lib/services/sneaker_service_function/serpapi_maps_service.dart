@@ -2,7 +2,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class SerpApiMapsService {
-  static const String apiKey = "YOUR_SERP_KEY";
+  static const String apiKey =
+      "2d6de271f95ac3c27b09f880ece86971373c69253ec6ccbc3301de1cd0451109";
 
   static Future<Map<String, dynamic>?> fetchShop(
     String shopName,

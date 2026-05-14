@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:sneaker_recognizer_plateform/core/constants/colors.dart';
 import 'package:sneaker_recognizer_plateform/domain/models/sneaker.dart';
 import 'package:sneaker_recognizer_plateform/presentation/screens/productDetails/details.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class ShopOfferCard extends StatelessWidget {
   final Sneaker sneaker;
@@ -14,7 +13,7 @@ class ShopOfferCard extends StatelessWidget {
     required this.allSneakers,
   });
 
-  /// Redirect to the product page
+  /// 🔗 Redirect to product details
   void _moreDetails(BuildContext context) {
     Navigator.push(
       context,
@@ -27,85 +26,135 @@ class ShopOfferCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: Colors.white,
-      elevation: 4,
-      shadowColor: Colors.black12,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        padding: const EdgeInsets.all(16),
+
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            /// LEFT SIDE: Shop name & price
+            /// =========================
+            /// PRODUCT ICON
+            /// =========================
+            Container(
+              width: 54,
+              height: 54,
+
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(16),
+              ),
+
+              child: const Icon(
+                Icons.shopping_bag_outlined,
+                size: 26,
+                color: Colors.black87,
+              ),
+            ),
+
+            const SizedBox(width: 14),
+
+            /// =========================
+            /// PRODUCT INFO
+            /// =========================
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+
                 children: [
-                  if (sneaker.title.isNotEmpty)
-                    Text(
-                      sneaker.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
+                  /// PRODUCT NAME
+                  Text(
+                    sneaker.title,
+
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      height: 1.2,
                     ),
-                  if (sneaker.price != 0)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Text(
-                        "€" + sneaker.price.toString(),
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.black,
-                        ),
-                      ),
+                  ),
+
+                  const SizedBox(height: 6),
+
+                  /// PRICE
+                  Text(
+                    sneaker.price != 0
+                        ? "€${sneaker.price}"
+                        : "Price unavailable",
+
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: sneaker.price != 0
+                          ? Colors.green.shade700
+                          : Colors.grey,
                     ),
-                  if (sneaker.shop.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 2),
-                      child: Text(
-                        sneaker.shop,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ),
+                  ),
                 ],
               ),
             ),
 
-            /// RIGHT SIDE: More details button
-            SizedBox(
-              height: 34,
-              child: ElevatedButton(
-                onPressed: () => _moreDetails(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryButton,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+            const SizedBox(width: 12),
+
+            /// =========================
+            /// ORDER BUTTON
+            /// =========================
+            ElevatedButton(
+              onPressed: () => _moreDetails(context),
+
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryButton,
+
+                elevation: 0,
+
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 12,
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: const [
-                    Text(
-                      "View",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
+
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Text(
+                    "Order",
+
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
                     ),
-                    SizedBox(width: 6),
-                    Icon(Icons.open_in_new, size: 14, color: Colors.white),
-                  ],
-                ),
+                  ),
+
+                  SizedBox(width: 6),
+
+                  Icon(
+                    Icons.arrow_forward_rounded,
+                    size: 16,
+                    color: Colors.white,
+                  ),
+                ],
               ),
             ),
           ],

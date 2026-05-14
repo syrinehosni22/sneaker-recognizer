@@ -2,7 +2,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 Future<List<Map<String, dynamic>>> googleSearchProducts(String query) async {
-  const apiKey = "YOUR_GOOGLE_API_KEY";
+  const apiKey =
+      "2d6de271f95ac3c27b09f880ece86971373c69253ec6ccbc3301de1cd0451109";
   const cx = "YOUR_SEARCH_ENGINE_ID";
 
   final url = Uri.parse(
@@ -36,4 +37,58 @@ Future<List<Map<String, dynamic>>> googleSearchProducts(String query) async {
       "price": priceMatch?.group(0),
     };
   }).toList();
+}
+
+class SerpApiShoppingService {
+  // 🔑 Put your real SerpAPI key here
+  static const String _apiKey =
+      "2d6de271f95ac3c27b09f880ece86971373c69253ec6ccbc3301de1cd0451109";
+
+  /// ================================
+  /// SEARCH PRODUCTS (GOOGLE SHOPPING)
+  /// ================================
+  static Future<List<Map<String, dynamic>>> searchProducts(String query) async {
+    try {
+      final uri = Uri.parse(
+        "https://serpapi.com/search.json"
+        "?engine=google_shopping"
+        "&q=${Uri.encodeComponent(query)}"
+        "&api_key=$_apiKey",
+      );
+
+      final response = await http.get(uri);
+
+      if (response.statusCode != 200) {
+        throw Exception("SerpAPI request failed: ${response.statusCode}");
+      }
+
+      final data = jsonDecode(response.body);
+
+      final List results = data["shopping_results"] ?? [];
+
+      // Normalize results for your app
+      return results.map<Map<String, dynamic>>((item) {
+        print("title: ${item["title"]}");
+        return {
+          "title": item["title"] ?? "Unknown product",
+          "price": _extractPrice(item["price"]),
+          "source": item["source"] ?? "Unknown store",
+          "link": item["link"] ?? "",
+          "thumbnail": item["thumbnail"] ?? "",
+        };
+      }).toList();
+    } catch (e) {
+      throw Exception("SerpAPI error: $e");
+    }
+  }
+
+  /// ================================
+  /// PRICE CLEANER
+  /// ================================
+  static String _extractPrice(dynamic price) {
+    if (price == null) return "0";
+
+    // SerpAPI sometimes returns "120 €" or "$120"
+    return price.toString().replaceAll(RegExp(r'[^0-9.,]'), '');
+  }
 }
