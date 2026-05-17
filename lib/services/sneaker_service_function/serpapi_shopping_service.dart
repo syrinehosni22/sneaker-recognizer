@@ -61,20 +61,19 @@ class SerpApiShoppingService {
       if (response.statusCode != 200) {
         throw Exception("SerpAPI request failed: ${response.statusCode}");
       }
-
+      print("SerpApi");
+      print(response.body);
       final data = jsonDecode(response.body);
 
       final List results = data["shopping_results"] ?? [];
-
-      // Normalize results for your app
       return results.map<Map<String, dynamic>>((item) {
-        print("title: ${item["title"]}");
         return {
           "title": item["title"] ?? "Unknown product",
           "price": _extractPrice(item["price"]),
-          "source": item["source"] ?? "Unknown store",
+          "shop": item["source"],
           "link": item["link"] ?? "",
           "thumbnail": item["thumbnail"] ?? "",
+          "image_url": item["serpapi_thumbnail"],
         };
       }).toList();
     } catch (e) {

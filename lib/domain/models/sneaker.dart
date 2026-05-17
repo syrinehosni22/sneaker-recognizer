@@ -1,7 +1,7 @@
 class Sneaker {
   final String title;
   final double price;
-  final String shop;
+  final String shopName;
   final String? link;
   final String? snippet;
 
@@ -12,7 +12,7 @@ class Sneaker {
   Sneaker({
     required this.title,
     required this.price,
-    required this.shop,
+    required this.shopName,
     this.link,
     this.snippet,
     this.imageUrl,
@@ -23,10 +23,10 @@ class Sneaker {
     return Sneaker(
       title: json['title'] ?? '',
       price: _parsePrice(json['price']),
-      shop: json['shop'] ?? '',
+      shopName: json['shopName'] ?? 'Unknown store',
       link: json['link'],
       snippet: json['snippet'],
-      imageUrl: json['image_url'],
+      imageUrl: json['imageUrl'],
       imageBase64: json['image_base64'],
     );
   }

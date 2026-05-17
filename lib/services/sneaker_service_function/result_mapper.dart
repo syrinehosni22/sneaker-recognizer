@@ -4,8 +4,9 @@ class ResultMapper {
       return {
         "price": item['price'],
         "thumbnail": item['thumbnail'],
-        "shopName": item['source'],
+        "shopName": item["shop"],
         "productLink": item['product_link'],
+        "imageUrl": item["image_url"],
       };
     }).toList();
   }

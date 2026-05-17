@@ -35,11 +35,19 @@ class ProductDetailsPage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               /// PRODUCT IMAGE (placeholder if no image URL)
+              /// PRODUCT IMAGE
               AspectRatio(
                 aspectRatio: 1,
                 child: Image.network(
-                  "https://via.placeholder.com/400x400.png?text=Sneaker",
+                  sneaker.imageUrl ??
+                      "https://via.placeholder.com/400x400.png?text=Sneaker",
                   fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Image.network(
+                      "https://via.placeholder.com/400x400.png?text=Sneaker",
+                      fit: BoxFit.cover,
+                    );
+                  },
                 ),
               ),
 
@@ -66,7 +74,7 @@ class ProductDetailsPage extends StatelessWidget {
 
               /// SHOP
               Text(
-                "Shop: ${sneaker.shop}",
+                "Shop: ${sneaker.shopName}",
                 style: const TextStyle(fontSize: 16, color: Colors.grey),
               ),
 

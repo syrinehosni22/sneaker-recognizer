@@ -75,7 +75,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 // 🔍 SEARCH BAR
                 TextField(
                   decoration: InputDecoration(
-                    hintText: "Search sneakers...",
+                    hintText: "Search ...",
                     prefixIcon: const Icon(Icons.search),
                     filled: true,
                     fillColor: Colors.grey[200],

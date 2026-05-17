@@ -5,6 +5,7 @@ import './sneaker_service_function/location_service.dart';
 import './sneaker_service_function/serpapi_shopping_service.dart';
 import './sneaker_service_function/result_mapper.dart';
 import './sneaker_service_function/membership_sort.dart';
+import './sneaker_service_function/shop_name_enricher.dart';
 
 class SneakerApiService {
   /// ================================
@@ -24,10 +25,13 @@ class SneakerApiService {
     final rawResults = await SerpApiShoppingService.searchProducts(model);
 
     // 5 Map results
-    final results = ResultMapper.mapBase(rawResults);
+    final mappedResults = ResultMapper.mapBase(rawResults);
 
-    // 6 Sort by membership / priority
-    final sortedResults = sortByMembership(results);
+    // 6 Add shop names
+    //    final enrichedResults = ShopNameEnricher.addShopNames(mappedResults);
+
+    // 7 Sort by membership / priority
+    final sortedResults = sortByMembership(mappedResults);
 
     return {"model": model, "location": position, "results": sortedResults};
   }
@@ -38,10 +42,15 @@ class SneakerApiService {
   static Future<Map<String, dynamic>> searchSneakerByName(String query) async {
     final rawResults = await SerpApiShoppingService.searchProducts(query);
 
-    final results = ResultMapper.mapBase(rawResults);
+    // Map results
+    //final mappedResults = ResultMapper.mapBase(rawResults);
 
-    final sortedResults = sortByMembership(results);
+    // Add shop names
+    //final enrichedResults = ShopNameEnricher.addShopNames(mappedResults);
 
-    return {"model": query, "results": sortedResults};
+    // Sort results
+    //final sortedResults = sortByMembership(rawResults);
+
+    return {"model": query, "results": rawResults};
   }
 }

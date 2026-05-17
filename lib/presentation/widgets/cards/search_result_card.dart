@@ -13,7 +13,6 @@ class ShopOfferCard extends StatelessWidget {
     required this.allSneakers,
   });
 
-  /// 🔗 Redirect to product details
   void _moreDetails(BuildContext context) {
     Navigator.push(
       context,
@@ -27,138 +26,70 @@ class ShopOfferCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            /// =========================
-            /// PRODUCT ICON
-            /// =========================
-            Container(
-              width: 54,
-              height: 54,
-
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(16),
-              ),
-
-              child: const Icon(
-                Icons.shopping_bag_outlined,
-                size: 26,
-                color: Colors.black87,
-              ),
-            ),
-
-            const SizedBox(width: 14),
-
-            /// =========================
-            /// PRODUCT INFO
-            /// =========================
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-
-                children: [
-                  /// PRODUCT NAME
-                  Text(
-                    sneaker.title,
-
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      height: 1.2,
-                    ),
+      child: Row(
+        children: [
+          /// SHOP + PRICE
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  sneaker.shopName ?? "Unknown Shop",
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
                   ),
-
-                  const SizedBox(height: 6),
-
-                  /// PRICE
-                  Text(
-                    sneaker.price != 0
-                        ? "€${sneaker.price}"
-                        : "Price unavailable",
-
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: sneaker.price != 0
-                          ? Colors.green.shade700
-                          : Colors.grey,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(width: 12),
-
-            /// =========================
-            /// ORDER BUTTON
-            /// =========================
-            ElevatedButton(
-              onPressed: () => _moreDetails(context),
-
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryButton,
-
-                elevation: 0,
-
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 12,
                 ),
 
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+                const SizedBox(height: 4),
+
+                Text(
+                  "\$${sneaker.price}",
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-              ),
+              ],
+            ),
+          ),
 
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: const [
-                  Text(
-                    "Order",
-
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-
-                  SizedBox(width: 6),
-
-                  Icon(
-                    Icons.arrow_forward_rounded,
-                    size: 16,
-                    color: Colors.white,
-                  ),
-                ],
+          /// ORDER BUTTON
+          ElevatedButton(
+            onPressed: () => _moreDetails(context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryButton,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
-          ],
-        ),
+            child: const Text(
+              "Order",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
