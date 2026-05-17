@@ -1,130 +1,124 @@
 import 'package:flutter/material.dart';
+import '../../../domain/models/sneaker.dart';
+import '../../../services/sneaker_api_service.dart';
+import '../productDetails/details.dart';
 
-class SearchScreen extends StatelessWidget {
+class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
+
+  @override
+  State<SearchScreen> createState() => _SearchScreenState();
+}
+
+class _SearchScreenState extends State<SearchScreen> {
+  String query = "";
+  bool loading = false;
+  List<Sneaker> results = [];
+
+  Future<void> search(String value) async {
+    setState(() {
+      loading = true;
+      query = value;
+    });
+
+    try {
+      final response = await SneakerApiService.searchSneakerByName(value);
+
+      final List<dynamic> rawResults = response["results"];
+
+      setState(() {
+        results = rawResults.map((e) => Sneaker.fromJson(e)).toList();
+      });
+    } catch (e) {
+      setState(() {
+        results = [];
+      });
+    }
+
+    setState(() {
+      loading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                /// TITLE
-                const Text(
-                  "Search Sneakers",
-                  style: TextStyle(
-                    fontSize: 34,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: -1,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 20),
+
+              const Text(
+                "Search Sneakers",
+                style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold),
+              ),
+
+              const SizedBox(height: 20),
+
+              /// SEARCH INPUT
+              TextField(
+                onChanged: (value) {
+                  if (value.length > 2) {
+                    search(value);
+                  }
+                },
+                decoration: InputDecoration(
+                  hintText: "Search sneakers...",
+                  prefixIcon: const Icon(Icons.search),
+                  filled: true,
+                  fillColor: Colors.grey.shade100,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide.none,
                   ),
                 ),
+              ),
 
-                const SizedBox(height: 8),
+              const SizedBox(height: 20),
 
-                Text(
-                  "Find your favorite sneakers instantly",
-                  style: TextStyle(fontSize: 15, color: Colors.grey.shade600),
-                ),
+              /// RESULTS
+              Expanded(
+                child: loading
+                    ? const Center(child: CircularProgressIndicator())
+                    : results.isEmpty
+                    ? const Center(child: Text("No results found"))
+                    : ListView.builder(
+                        itemCount: results.length,
+                        itemBuilder: (context, index) {
+                          final sneaker = results[index];
 
-                const SizedBox(height: 32),
-
-                /// MODERN SEARCH BAR
-                Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    color: Colors.grey.shade100,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8),
+                          return Card(
+                            child: ListTile(
+                              leading: Image.network(
+                                sneaker.imageUrl ??
+                                    "https://via.placeholder.com/60",
+                                width: 60,
+                                fit: BoxFit.cover,
+                              ),
+                              title: Text(sneaker.title),
+                              subtitle: Text(
+                                "€${sneaker.price.toStringAsFixed(2)}",
+                              ),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => ProductDetailsPage(
+                                      sneaker: sneaker,
+                                      allSneakers: results, // still valid here
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          );
+                        },
                       ),
-                    ],
-                  ),
-                  child: TextField(
-                    decoration: InputDecoration(
-                      hintText: "Type sneaker name...",
-                      hintStyle: TextStyle(color: Colors.grey.shade500),
-
-                      /// LEFT ICON
-                      prefixIcon: Icon(
-                        Icons.search_rounded,
-                        color: Colors.grey.shade700,
-                      ),
-
-                      /// RIGHT ICON
-                      suffixIcon: Container(
-                        margin: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          color: Colors.black,
-                        ),
-                        child: const Icon(
-                          Icons.arrow_forward_rounded,
-                          color: Colors.white,
-                        ),
-                      ),
-
-                      filled: true,
-                      fillColor: Colors.grey.shade100,
-
-                      contentPadding: const EdgeInsets.symmetric(vertical: 22),
-
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        borderSide: BorderSide.none,
-                      ),
-
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        borderSide: BorderSide.none,
-                      ),
-
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        borderSide: BorderSide(
-                          color: Colors.grey.shade400,
-                          width: 1.2,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                /// SEARCH BUTTON
-                SizedBox(
-                  width: double.infinity,
-                  height: 58,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      // TODO: implement search API
-                    },
-
-                    style: ElevatedButton.styleFrom(
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                    ),
-
-                    child: const Text(
-                      "Search",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

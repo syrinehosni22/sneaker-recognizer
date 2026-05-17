@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
-import 'package:sneaker_recognizer_plateform/presentation/app_root.dart';
 
-import 'presentation/screens/main/main_screen.dart';
-import 'presentation/screens/login/login_page.dart';
+import 'presentation/app_root.dart';
 import 'services/auth_service.dart';
+import 'services/cart_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,8 +18,11 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => AuthService(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthService()),
+        ChangeNotifierProvider(create: (_) => CartService()), // 🔥 ADD THIS
+      ],
       child: MaterialApp(
         title: 'Sneaker Recognizer',
         debugShowCheckedModeBanner: false,

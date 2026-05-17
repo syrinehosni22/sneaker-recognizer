@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sneaker_recognizer_plateform/presentation/screens/cart/cart_page.dart';
 import '../home/home_screen.dart';
 import '../search/search_screen.dart';
 import '../favorites/favorites_screen.dart';
@@ -17,7 +18,7 @@ class _MainScreenState extends State<MainScreen> {
   final List<Widget> _screens = const [
     HomeScreen(),
     SearchScreen(),
-    // FavoritesScreen(),
+    CartPage(),
     ProfileScreen(),
   ];
 
@@ -35,8 +36,8 @@ class _MainScreenState extends State<MainScreen> {
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
           BottomNavigationBarItem(icon: Icon(Icons.search), label: "Search"),
           BottomNavigationBarItem(
-            icon: Icon(Icons.favorite),
-            label: "Favorites",
+            icon: Icon(Icons.shopping_cart),
+            label: "Cart",
           ),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
         ],

@@ -8,6 +8,7 @@ class FavoritesScreen extends StatelessWidget {
 
   final List<Sneaker> favoriteSneakers = [
     Sneaker(
+      id: "a.0",
       title: "Nike Air Force 1 White Sneakers - Amazon",
       price: 112.50,
       shopName: "amazon.fr",
@@ -15,6 +16,7 @@ class FavoritesScreen extends StatelessWidget {
       snippet: "Nike Air Force 1 White. Prix €112.50. Expédié par Amazon.",
     ),
     Sneaker(
+      id: "n.0",
       title: "Nike Air Force 1 07 White - Nike Official Store",
       price: 120.00,
       shopName: "nike.com",

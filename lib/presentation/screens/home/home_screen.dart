@@ -1,13 +1,41 @@
-import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:sneaker_recognizer_plateform/presentation/screens/searchResult/search_result.dart';
+import 'dart:convert';
 import 'dart:typed_data';
+
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
+
 import 'package:sneaker_recognizer_plateform/presentation/widgets/SneakerScan/SneakerScanButton.dart';
 import 'package:sneaker_recognizer_plateform/presentation/widgets/cards/popular_sneaker_card.dart';
 import 'package:sneaker_recognizer_plateform/presentation/widgets/cards/special_offer_card.dart';
-import 'package:sneaker_recognizer_plateform/services/sneaker_api_service.dart';
 
-import 'home_controller.dart';
+class Product {
+  final int id;
+  final String title;
+  final String image;
+  final double price;
+  final String category;
+
+  Product({
+    required this.id,
+    required this.title,
+    required this.image,
+    required this.price,
+    required this.category,
+  });
+
+  factory Product.fromJson(Map<String, dynamic> json) {
+    return Product(
+      id: json['id'] ?? 0,
+      title: (json['title'] ?? '').toString(),
+      image: (json['image'] ?? '').toString(),
+      price: (json['price'] is num)
+          ? (json['price'] as num).toDouble()
+          : double.tryParse(json['price'].toString()) ?? 0.0,
+      category: (json['category'] ?? '').toString(),
+    );
+  }
+}
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -17,13 +45,50 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final ImagePicker picker = ImagePicker();
+
   XFile? _image;
   bool _loading = false;
 
-  final picker = ImagePicker();
-  final HomeController controller = HomeController();
+  List<Product> products = [];
 
-  // 📸 Pick image
+  @override
+  void initState() {
+    super.initState();
+    fetchProducts();
+  }
+
+  // 📡 FETCH PRODUCTS
+  Future<void> fetchProducts() async {
+    try {
+      setState(() => _loading = true);
+
+      final response = await http.get(
+        Uri.parse('https://fakestoreapi.com/products'),
+      );
+
+      if (response.statusCode == 200) {
+        final List data = jsonDecode(response.body);
+
+        final parsed = data
+            .whereType<Map<String, dynamic>>()
+            .map((e) => Product.fromJson(e))
+            .toList();
+
+        setState(() {
+          products = parsed;
+          _loading = false;
+        });
+      } else {
+        setState(() => _loading = false);
+      }
+    } catch (e) {
+      debugPrint("API error: $e");
+      setState(() => _loading = false);
+    }
+  }
+
+  // 📸 PICK IMAGE
   Future<void> pickImage() async {
     final XFile? pickedFile = await picker.pickImage(
       source: ImageSource.camera,
@@ -32,50 +97,36 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (pickedFile == null) return;
 
-    setState(() {
-      _image = pickedFile; // store XFile instead of File
-      _loading = true;
-    });
-
-    await sendImageAndNavigate(pickedFile);
+    setState(() => _image = pickedFile);
   }
 
-  Future<void> sendImageAndNavigate(XFile image) async {
-    try {
-      setState(() => _loading = true);
+  // ⭐ FEATURED PRODUCT
+  Product? get featuredProduct => products.isNotEmpty ? products.first : null;
 
-      final data = await SneakerApiService.getSneakerData(image);
-
-      setState(() => _loading = false);
-
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => SneakerResultPage(result: data["results"]),
-        ),
-      );
-    } catch (e) {
-      setState(() => _loading = false);
-      debugPrint("Request failed: $e");
+  // 🛡 SAFE IMAGE
+  String safeImage(String url) {
+    if (url.trim().isEmpty) {
+      return 'https://via.placeholder.com/300x300.png?text=No+Image';
     }
+    return url;
   }
 
-  // ✅ BUILD MUST BE HERE
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
-          // Scrollable content
           SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 🔍 SEARCH BAR
+                const SizedBox(height: 50),
+
+                // SEARCH
                 TextField(
                   decoration: InputDecoration(
-                    hintText: "Search ...",
+                    hintText: 'Search products...',
                     prefixIcon: const Icon(Icons.search),
                     filled: true,
                     fillColor: Colors.grey[200],
@@ -88,18 +139,21 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 const SizedBox(height: 20),
 
-                // 🖼 IMAGE PREVIEW (TOP OF VIEW)
+                // IMAGE PREVIEW
                 if (_image != null)
                   FutureBuilder<Uint8List>(
                     future: _image!.readAsBytes(),
                     builder: (context, snapshot) {
-                      if (!snapshot.hasData)
-                        return const CircularProgressIndicator();
+                      if (!snapshot.hasData) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+
                       return ClipRRect(
                         borderRadius: BorderRadius.circular(16),
                         child: Image.memory(
                           snapshot.data!,
                           height: 200,
+                          width: double.infinity,
                           fit: BoxFit.cover,
                         ),
                       );
@@ -108,60 +162,65 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 const SizedBox(height: 25),
 
-                // ⭐ SPECIAL OFFERS
+                // SPECIAL OFFER
                 const Text(
-                  "Special Offers",
+                  'Special Offers',
                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
+
                 const SizedBox(height: 12),
 
-                SpecialOfferCard(
-                  imagePath: "assets/images/special_offer.jpg",
-                  title: "30% OFF on Nike Sneakers!",
-                  heightRatio: 0.7,
-                ),
+                featuredProduct == null
+                    ? const Center(child: CircularProgressIndicator())
+                    : SpecialOfferCard(
+                        imagePath: safeImage(featuredProduct!.image),
+                        title:
+                            '${featuredProduct!.title} - \$${featuredProduct!.price}',
+                        heightRatio: 0.7,
+                      ),
 
                 const SizedBox(height: 30),
 
-                // 🔥 MOST POPULAR
+                // MOST POPULAR
                 const Text(
-                  "Most Popular",
+                  'Most Popular',
                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
+
                 const SizedBox(height: 12),
 
                 SizedBox(
-                  height: 160,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    children: const [
-                      PopularSneakerCard(
-                        "Nike Air Max",
-                        "assets/images/nike-air-max.png",
-                      ),
-                      PopularSneakerCard(
-                        "Yeezy Boost",
-                        "assets/images/yeezy-bost.png",
-                      ),
-                      PopularSneakerCard(
-                        "Air Jordan 4",
-                        "assets/images/air-jordan-4.png",
-                      ),
-                    ],
-                  ),
+                  height: 220,
+                  child: products.isEmpty
+                      ? const Center(child: Text('No products found'))
+                      : ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: products.length,
+                          itemBuilder: (context, index) {
+                            final product = products[index];
+
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 12),
+                              child: PopularSneakerCard(
+                                product.title,
+                                safeImage(product.image),
+                              ),
+                            );
+                          },
+                        ),
                 ),
               ],
             ),
           ),
 
-          // 📸 Floating scan button
+          // SCAN BUTTON
           Positioned(
             top: 20,
             right: 20,
             child: SneakerScanButton(onTap: pickImage),
           ),
 
-          // ⏳ LOADING OVERLAY
+          // LOADING
           if (_loading)
             Container(
               color: Colors.black.withOpacity(0.4),

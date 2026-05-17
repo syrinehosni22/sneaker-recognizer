@@ -12,36 +12,58 @@ class CartService with ChangeNotifier {
   List<CartItem> get items => List.unmodifiable(_items);
 
   /// ADD SNEAKER
-  // void addSneaker(Sneaker sneaker) {
-  //   final index = _items.indexWhere((item) => item.sneaker.id == sneaker.id);
+  void addSneaker(Sneaker sneaker) {
+    final index = _items.indexWhere((item) => item.sneaker.id == sneaker.id);
 
-  //   if (index >= 0) {
-  //     _items[index].quantity++;
-  //   } else {
-  //     _items.add(CartItem(sneaker: sneaker));
-  //   }
-  //   notifyListeners();
-  // }
+    if (index >= 0) {
+      _items[index].quantity++;
+    } else {
+      _items.add(CartItem(sneaker: sneaker, quantity: 1));
+    }
 
-  /// REMOVE SNEAKER
-  // void removeSneaker(String sneakerId) {
-  //   _items.removeWhere((item) => item.sneaker.id == sneakerId);
-  //   notifyListeners();
-  // }
+    notifyListeners();
+  }
 
-  /// CHANGE DELIVERY / PICKUP
+  /// REMOVE ITEM COMPLETELY
+  void removeSneaker(String sneakerId) {
+    _items.removeWhere((item) => item.sneaker.id == sneakerId);
+    notifyListeners();
+  }
+
+  /// DECREASE QUANTITY
+  void decreaseQuantity(String sneakerId) {
+    final index = _items.indexWhere((item) => item.sneaker.id == sneakerId);
+
+    if (index == -1) return;
+
+    if (_items[index].quantity > 1) {
+      _items[index].quantity--;
+    } else {
+      _items.removeAt(index);
+    }
+
+    notifyListeners();
+  }
+
+  void increaseQuantity(String sneakerId) {
+    final index = _items.indexWhere((item) => item.sneaker.id == sneakerId);
+
+    if (index != -1) {
+      _items[index].quantity++;
+      notifyListeners();
+    }
+  }
+
   void setOrderType(OrderType type) {
     orderType = type;
     notifyListeners();
   }
 
-  /// TOTALS
   double get subtotal => _items.fold(0, (sum, item) => sum + item.total);
 
   double get total =>
       subtotal + (orderType == OrderType.delivery ? deliveryFee : 0);
 
-  /// CREATE ORDER PAYLOAD (BACKEND)
   Map<String, dynamic> toOrderPayload() {
     return {
       "type": orderType.name,
@@ -60,7 +82,6 @@ class CartService with ChangeNotifier {
     };
   }
 
-  /// CLEAR CART
   void clear() {
     _items.clear();
     notifyListeners();

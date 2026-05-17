@@ -38,19 +38,18 @@ class SneakerApiService {
 
   /// ================================
   /// 2. TEXT SEARCH → SERPAPI
-  /// ================================
   static Future<Map<String, dynamic>> searchSneakerByName(String query) async {
     final rawResults = await SerpApiShoppingService.searchProducts(query);
 
     // Map results
-    //final mappedResults = ResultMapper.mapBase(rawResults);
+    final mappedResults = ResultMapper.mapBase(rawResults);
 
     // Add shop names
-    //final enrichedResults = ShopNameEnricher.addShopNames(mappedResults);
+    final enrichedResults = ShopNameEnricher.addShopNames(mappedResults);
 
     // Sort results
-    //final sortedResults = sortByMembership(rawResults);
+    final sortedResults = sortByMembership(enrichedResults);
 
-    return {"model": query, "results": rawResults};
+    return {"model": query, "results": sortedResults};
   }
 }

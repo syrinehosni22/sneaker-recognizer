@@ -1,31 +1,30 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import '../domain/models/user.dart';
+
+import 'package:sneaker_recognizer_plateform/domain/models/user.dart';
 
 class AuthService with ChangeNotifier {
   static const String baseUrl = "http://localhost:5000/api";
 
   User? _currentUser;
   String? _token;
+  String? _profileImage;
 
   User? get currentUser => _currentUser;
   bool get isLoggedIn => _currentUser != null;
+  String? get profileImage => _profileImage;
 
-  /// ---------------- HEADERS ----------------
-
-  /// Public headers (no auth)
   Map<String, String> get _publicHeaders => {
     "Content-Type": "application/json",
   };
 
-  /// Auth headers
   Map<String, String> get _authHeaders => {
     "Content-Type": "application/json",
     "Authorization": "Bearer $_token",
   };
 
-  /// ---------------- LOGIN ----------------
+  // ================= LOGIN =================
   Future<void> login(String email, String password) async {
     final res = await http.post(
       Uri.parse("$baseUrl/auth/login"),
@@ -39,14 +38,15 @@ class AuthService with ChangeNotifier {
     }
 
     final data = jsonDecode(res.body);
+
     _currentUser = User.fromJson(data["data"]["user"]);
     _token = data["token"];
+    _profileImage = null;
 
     notifyListeners();
   }
 
-  /// ---------------- LEGACY REGISTER (OPTIONAL) ----------------
-  /// You can keep it if used elsewhere
+  // ================= REGISTER =================
   Future<void> register(String name, String email, String password) async {
     final res = await http.post(
       Uri.parse("$baseUrl/auth/register"),
@@ -60,17 +60,21 @@ class AuthService with ChangeNotifier {
     }
 
     final data = jsonDecode(res.body);
-    _token = data["token"];
+
     _currentUser = User.fromJson(data["data"]["user"]);
+    _token = data["token"];
+    _profileImage = null;
 
     notifyListeners();
   }
 
-  /// ============================================================
-  /// ========== EMAIL VERIFICATION REGISTRATION FLOW ============
-  /// ============================================================
+  // ================= CREATE ACCOUNT (USED IN UI FLOW) =================
+  Future<void> createAccount(String name, String email, String password) async {
+    await register(name, email, password);
+  }
 
-  /// STEP 1️⃣ : Send verification code (name + email)
+  // ================= EMAIL VERIFICATION FLOW =================
+
   Future<void> sendVerificationEmail(String name, String email) async {
     final res = await http.post(
       Uri.parse("$baseUrl/auth/send-code"),
@@ -78,13 +82,12 @@ class AuthService with ChangeNotifier {
       body: jsonEncode({"name": name, "email": email}),
     );
 
-    // if (res.statusCode != 200) {
-    //   final error = jsonDecode(res.body);
-    //   throw Exception(error["message"] ?? "Failed to send verification code");
-    // }
+    if (res.statusCode != 200) {
+      final error = jsonDecode(res.body);
+      throw Exception(error["message"] ?? "Failed to send code");
+    }
   }
 
-  /// STEP 2️⃣ : Verify code (email + code)
   Future<void> verifyCode(String email, String code) async {
     final res = await http.post(
       Uri.parse("$baseUrl/auth/verify-code"),
@@ -92,35 +95,13 @@ class AuthService with ChangeNotifier {
       body: jsonEncode({"email": email, "code": code}),
     );
 
-    // if (res.statusCode != 200) {
-    //   final error = jsonDecode(res.body);
-    //   throw Exception(
-    //     error["message"] ?? "Invalid or expired verification code",
-    //   );
-    // }
-  }
-
-  /// STEP 3️⃣ : Create account (email + password)
-  Future<void> createAccount(String name, String email, String password) async {
-    final res = await http.post(
-      Uri.parse("$baseUrl/auth/register"),
-      headers: _publicHeaders,
-      body: jsonEncode({"name": name, "email": email, "password": password}),
-    );
-
-    if (res.statusCode != 201) {
+    if (res.statusCode != 200) {
       final error = jsonDecode(res.body);
-      throw Exception(error["message"] ?? "Account creation failed");
+      throw Exception(error["message"] ?? "Invalid verification code");
     }
-
-    final data = jsonDecode(res.body);
-    _token = data["token"];
-    _currentUser = User.fromJson(data["data"]["user"]);
-
-    notifyListeners(); // auto-login
   }
 
-  /// ---------------- RESET PASSWORD ----------------
+  // ================= RESET PASSWORD =================
   Future<void> resetPassword(String email) async {
     final res = await http.post(
       Uri.parse("$baseUrl/auth/reset-password"),
@@ -134,7 +115,13 @@ class AuthService with ChangeNotifier {
     }
   }
 
-  /// ---------------- UPDATE PROFILE ----------------
+  // ================= PROFILE IMAGE =================
+  Future<void> updateProfileImage(String path) async {
+    _profileImage = path;
+    notifyListeners();
+  }
+
+  // ================= UPDATE PROFILE =================
   Future<void> updateProfile({
     required String name,
     required String email,
@@ -149,14 +136,14 @@ class AuthService with ChangeNotifier {
 
     if (res.statusCode != 200) {
       final error = jsonDecode(res.body);
-      throw Exception(error["message"] ?? "Profile update failed");
+      throw Exception(error["message"] ?? "Update failed");
     }
 
     _currentUser = User.fromJson(jsonDecode(res.body));
     notifyListeners();
   }
 
-  /// ---------------- SUBSCRIBE ----------------
+  // ================= SUBSCRIBE =================
   Future<void> subscribe() async {
     if (_currentUser == null) return;
 
@@ -174,10 +161,11 @@ class AuthService with ChangeNotifier {
     notifyListeners();
   }
 
-  /// ---------------- LOGOUT ----------------
+  // ================= LOGOUT =================
   Future<void> logout() async {
-    _token = null;
     _currentUser = null;
+    _token = null;
+    _profileImage = null;
     notifyListeners();
   }
 }
