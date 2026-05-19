@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:sneaker_recognizer_plateform/domain/models/user.dart';
 
 class AuthService with ChangeNotifier {
-  static const String baseUrl = "http://localhost:5000/api";
+  static const String baseUrl = "http://92.222.243.150:5000/api";
 
   User? _currentUser;
   String? _token;

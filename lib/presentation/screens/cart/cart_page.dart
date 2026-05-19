@@ -2,8 +2,37 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../services/cart_service.dart';
 
-class CartPage extends StatelessWidget {
+class CartPage extends StatefulWidget {
   const CartPage({super.key});
+
+  @override
+  State<CartPage> createState() => _CartPageState();
+}
+
+class _CartPageState extends State<CartPage> {
+  bool _isLoading = false;
+
+  Future<void> _checkout(CartService cart) async {
+    setState(() => _isLoading = true);
+
+    final success = await CartService.payOrder(cart.total);
+
+    if (!mounted) return;
+
+    if (success) {
+      cart.clear();
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Payment successful 🎉")));
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Payment failed ❌")));
+    }
+
+    setState(() => _isLoading = false);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -16,6 +45,7 @@ class CartPage extends StatelessWidget {
           ? const Center(child: Text("Your cart is empty"))
           : Column(
               children: [
+                /// ITEMS LIST
                 Expanded(
                   child: ListView.builder(
                     itemCount: cart.items.length,
@@ -46,9 +76,7 @@ class CartPage extends StatelessWidget {
                                 onPressed: () =>
                                     cart.decreaseQuantity(item.sneaker.id),
                               ),
-
                               Text("${item.quantity}"),
-
                               IconButton(
                                 icon: const Icon(Icons.add),
                                 onPressed: () =>
@@ -62,7 +90,7 @@ class CartPage extends StatelessWidget {
                   ),
                 ),
 
-                /// TOTAL SECTION
+                /// TOTAL + CHECKOUT
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: const BoxDecoration(
@@ -102,15 +130,17 @@ class CartPage extends StatelessWidget {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: () {
-                            final payload = cart.toOrderPayload();
-                            debugPrint(payload.toString());
-
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text("Order sent!")),
-                            );
-                          },
-                          child: const Text("Checkout"),
+                          onPressed: _isLoading ? null : () => _checkout(cart),
+                          child: _isLoading
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text("Checkout"),
                         ),
                       ),
                     ],

@@ -1,14 +1,16 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
+import 'package:sneaker_recognizer_plateform/presentation/screens/searchResult/search_result.dart';
 import 'package:sneaker_recognizer_plateform/presentation/widgets/SneakerScan/SneakerScanButton.dart';
 import 'package:sneaker_recognizer_plateform/presentation/widgets/cards/popular_sneaker_card.dart';
 import 'package:sneaker_recognizer_plateform/presentation/widgets/cards/special_offer_card.dart';
+import 'package:sneaker_recognizer_plateform/services/sneaker_api_service.dart';
 
+// ================= PRODUCT MODEL =================
 class Product {
   final int id;
   final String title;
@@ -29,14 +31,15 @@ class Product {
       id: json['id'] ?? 0,
       title: (json['title'] ?? '').toString(),
       image: (json['image'] ?? '').toString(),
-      price: (json['price'] is num)
-          ? (json['price'] as num).toDouble()
+      price: json['price'] == null
+          ? 0.0
           : double.tryParse(json['price'].toString()) ?? 0.0,
       category: (json['category'] ?? '').toString(),
     );
   }
 }
 
+// ================= HOME SCREEN =================
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -45,9 +48,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final ImagePicker picker = ImagePicker();
-
-  XFile? _image;
   bool _loading = false;
 
   List<Product> products = [];
@@ -58,7 +58,14 @@ class _HomeScreenState extends State<HomeScreen> {
     fetchProducts();
   }
 
-  // 📡 FETCH PRODUCTS
+  // ================= SAFE DOUBLE =================
+  double safeDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is num) return value.toDouble();
+    return double.tryParse(value.toString()) ?? 0.0;
+  }
+
+  // ================= FETCH PRODUCTS =================
   Future<void> fetchProducts() async {
     try {
       setState(() => _loading = true);
@@ -70,13 +77,8 @@ class _HomeScreenState extends State<HomeScreen> {
       if (response.statusCode == 200) {
         final List data = jsonDecode(response.body);
 
-        final parsed = data
-            .whereType<Map<String, dynamic>>()
-            .map((e) => Product.fromJson(e))
-            .toList();
-
         setState(() {
-          products = parsed;
+          products = data.map((e) => Product.fromJson(e)).toList();
           _loading = false;
         });
       } else {
@@ -88,22 +90,10 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // 📸 PICK IMAGE
-  Future<void> pickImage() async {
-    final XFile? pickedFile = await picker.pickImage(
-      source: ImageSource.camera,
-      imageQuality: 85,
-    );
-
-    if (pickedFile == null) return;
-
-    setState(() => _image = pickedFile);
-  }
-
-  // ⭐ FEATURED PRODUCT
+  // ================= FEATURED PRODUCT =================
   Product? get featuredProduct => products.isNotEmpty ? products.first : null;
 
-  // 🛡 SAFE IMAGE
+  // ================= SAFE IMAGE =================
   String safeImage(String url) {
     if (url.trim().isEmpty) {
       return 'https://via.placeholder.com/300x300.png?text=No+Image';
@@ -111,6 +101,50 @@ class _HomeScreenState extends State<HomeScreen> {
     return url;
   }
 
+  // ================= AI SCAN =================
+  Future<void> scanSneaker() async {
+    try {
+      setState(() => _loading = true);
+
+      final picker = ImagePicker();
+
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 85,
+      );
+
+      if (image == null) {
+        setState(() => _loading = false);
+        return;
+      }
+
+      final result = await SneakerApiService.getSneakerData(image);
+
+      final rawResults = (result['results'] ?? []) as List;
+
+      setState(() => _loading = false);
+
+      if (rawResults.isEmpty) return;
+
+      final List<Map<String, dynamic>> safeResults = rawResults
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+
+      if (!mounted) return;
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => SneakerResultPage(result: safeResults),
+        ),
+      );
+    } catch (e) {
+      debugPrint("Scan error: $e");
+      setState(() => _loading = false);
+    }
+  }
+
+  // ================= UI =================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -123,10 +157,10 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 const SizedBox(height: 50),
 
-                // SEARCH
+                // SEARCH BAR
                 TextField(
                   decoration: InputDecoration(
-                    hintText: 'Search products...',
+                    hintText: 'Search sneakers...',
                     prefixIcon: const Icon(Icons.search),
                     filled: true,
                     fillColor: Colors.grey[200],
@@ -137,32 +171,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 20),
-
-                // IMAGE PREVIEW
-                if (_image != null)
-                  FutureBuilder<Uint8List>(
-                    future: _image!.readAsBytes(),
-                    builder: (context, snapshot) {
-                      if (!snapshot.hasData) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-
-                      return ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: Image.memory(
-                          snapshot.data!,
-                          height: 200,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                        ),
-                      );
-                    },
-                  ),
-
                 const SizedBox(height: 25),
 
-                // SPECIAL OFFER
+                // SPECIAL OFFERS
                 const Text(
                   'Special Offers',
                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
@@ -181,7 +192,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 const SizedBox(height: 30),
 
-                // MOST POPULAR
+                // POPULAR
                 const Text(
                   'Most Popular',
                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
@@ -217,10 +228,10 @@ class _HomeScreenState extends State<HomeScreen> {
           Positioned(
             top: 20,
             right: 20,
-            child: SneakerScanButton(onTap: pickImage),
+            child: SneakerScanButton(onTap: scanSneaker),
           ),
 
-          // LOADING
+          // LOADING OVERLAY
           if (_loading)
             Container(
               color: Colors.black.withOpacity(0.4),
