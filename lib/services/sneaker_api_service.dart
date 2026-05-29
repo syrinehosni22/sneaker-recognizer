@@ -22,7 +22,7 @@ class SneakerApiService {
     final position = await LocationService.getUserLocation();
 
     // 4 SerpAPI product search
-    final rawResults = await SerpApiShoppingService.searchProducts(model);
+    final rawResults = await ProductSearchService.searchProducts(model);
 
     // 5 Map results
     final mappedResults = ResultMapper.mapBase(rawResults);
@@ -39,7 +39,7 @@ class SneakerApiService {
   /// ================================
   /// 2. TEXT SEARCH → SERPAPI
   static Future<Map<String, dynamic>> searchSneakerByName(String query) async {
-    final rawResults = await SerpApiShoppingService.searchProducts(query);
+    final rawResults = await ProductSearchService.searchProducts(query);
 
     // Map results
     final mappedResults = ResultMapper.mapBase(rawResults);

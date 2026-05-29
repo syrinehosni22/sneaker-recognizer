@@ -52,7 +52,7 @@ class _SearchScreenState extends State<SearchScreen> {
               const SizedBox(height: 20),
 
               const Text(
-                "Search Sneakers",
+                "Search",
                 style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold),
               ),
 
@@ -66,7 +66,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   }
                 },
                 decoration: InputDecoration(
-                  hintText: "Search sneakers...",
+                  hintText: "Search...",
                   prefixIcon: const Icon(Icons.search),
                   filled: true,
                   fillColor: Colors.grey.shade100,
