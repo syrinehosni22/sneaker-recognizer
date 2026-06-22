@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-
 import 'package:sneaker_recognizer_plateform/services/auth_service.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -13,221 +12,836 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  final ImagePicker picker = ImagePicker();
-  XFile? _image;
+  final ImagePicker _picker = ImagePicker();
+  bool _notificationsEnabled = true;
+  bool _darkMode = false;
 
-  Future<void> pickImage(AuthService auth) async {
-    final picked = await picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 85,
+  // ── Photo picker ───────────────────────────────────────────────────────────
+  void _showPhotoOptions(AuthService auth) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => Padding(
+        padding: EdgeInsets.fromLTRB(
+          24,
+          16,
+          24,
+          MediaQuery.of(context).padding.bottom + 24,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _sheetHandle(),
+            const SizedBox(height: 20),
+            const Text(
+              'Profile photo',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w500,
+                color: Colors.black,
+                letterSpacing: -.3,
+              ),
+            ),
+            const SizedBox(height: 20),
+            _sheetRow(
+              icon: Icons.photo_library_outlined,
+              label: 'Choose from library',
+              onTap: () async {
+                Navigator.pop(context);
+                await _pickImage(auth, ImageSource.gallery);
+              },
+            ),
+            _sheetRow(
+              icon: Icons.camera_alt_outlined,
+              label: 'Take a photo',
+              onTap: () async {
+                Navigator.pop(context);
+                await _pickImage(auth, ImageSource.camera);
+              },
+            ),
+            if (auth.profileImage != null)
+              _sheetRow(
+                icon: Icons.delete_outline,
+                label: 'Remove photo',
+                color: Colors.red,
+                onTap: () async {
+                  Navigator.pop(context);
+                  await auth.updateProfileImage('');
+                  setState(() {});
+                },
+              ),
+          ],
+        ),
+      ),
     );
-
-    if (picked == null) return;
-
-    setState(() => _image = picked);
-    await auth.updateProfileImage(picked.path);
   }
 
+  Future<void> _pickImage(AuthService auth, ImageSource source) async {
+    final picked = await _picker.pickImage(source: source, imageQuality: 85);
+    if (picked == null) return;
+    await auth.updateProfileImage(picked.path);
+    setState(() {});
+  }
+
+  // ── Edit profile sheet ─────────────────────────────────────────────────────
+  void _showEditProfile(AuthService auth) {
+    final nameCtrl = TextEditingController(text: auth.currentUser?.name ?? '');
+    final emailCtrl = TextEditingController(
+      text: auth.currentUser?.email ?? '',
+    );
+    bool loading = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheet) => Padding(
+          padding: EdgeInsets.fromLTRB(
+            24,
+            16,
+            24,
+            MediaQuery.of(ctx).viewInsets.bottom +
+                MediaQuery.of(ctx).padding.bottom +
+                24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(child: _sheetHandle()),
+              const SizedBox(height: 20),
+              const Text(
+                'Edit profile',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black,
+                  letterSpacing: -.3,
+                ),
+              ),
+              const SizedBox(height: 20),
+              _inputField(controller: nameCtrl, label: 'Name'),
+              const SizedBox(height: 12),
+              _inputField(
+                controller: emailCtrl,
+                label: 'Email',
+                keyboard: TextInputType.emailAddress,
+              ),
+              const SizedBox(height: 24),
+              _blackButton(
+                label: loading ? null : 'Save changes',
+                loading: loading,
+                onTap: () async {
+                  setSheet(() => loading = true);
+                  try {
+                    await auth.updateProfile(
+                      name: nameCtrl.text.trim(),
+                      email: emailCtrl.text.trim(),
+                    );
+                    if (ctx.mounted) Navigator.pop(ctx);
+                    _snack('Profile updated');
+                  } catch (e) {
+                    setSheet(() => loading = false);
+                    _snack('Update failed: $e', error: true);
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Change password sheet ──────────────────────────────────────────────────
+  void _showChangePassword(AuthService auth) {
+    final emailCtrl = TextEditingController(
+      text: auth.currentUser?.email ?? '',
+    );
+    bool loading = false;
+    bool sent = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheet) => Padding(
+          padding: EdgeInsets.fromLTRB(
+            24,
+            16,
+            24,
+            MediaQuery.of(ctx).viewInsets.bottom +
+                MediaQuery.of(ctx).padding.bottom +
+                24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(child: _sheetHandle()),
+              const SizedBox(height: 20),
+              const Text(
+                'Reset password',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black,
+                  letterSpacing: -.3,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                sent
+                    ? 'A reset link has been sent to your email.'
+                    : 'We\'ll send a reset link to your email.',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.black.withOpacity(.45),
+                ),
+              ),
+              const SizedBox(height: 20),
+              if (!sent)
+                _inputField(
+                  controller: emailCtrl,
+                  label: 'Email',
+                  keyboard: TextInputType.emailAddress,
+                ),
+              const SizedBox(height: 24),
+              sent
+                  ? _blackButton(label: 'Done', onTap: () => Navigator.pop(ctx))
+                  : _blackButton(
+                      label: loading ? null : 'Send reset link',
+                      loading: loading,
+                      onTap: () async {
+                        setSheet(() => loading = true);
+                        try {
+                          await auth.resetPassword(emailCtrl.text.trim());
+                          setSheet(() {
+                            loading = false;
+                            sent = true;
+                          });
+                        } catch (e) {
+                          setSheet(() => loading = false);
+                          _snack('Failed: $e', error: true);
+                        }
+                      },
+                    ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Confirm logout ─────────────────────────────────────────────────────────
+  void _confirmLogout(AuthService auth) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => Padding(
+        padding: EdgeInsets.fromLTRB(
+          24,
+          16,
+          24,
+          MediaQuery.of(context).padding.bottom + 24,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _sheetHandle(),
+            const SizedBox(height: 24),
+            const Text(
+              'Log out?',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w500,
+                color: Colors.black,
+                letterSpacing: -.3,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'You will need to sign in again.',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.black.withOpacity(.4),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: _outlineButton(
+                    label: 'Cancel',
+                    onTap: () => Navigator.pop(context),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _blackButton(
+                    label: 'Log out',
+                    onTap: () async {
+                      Navigator.pop(context);
+                      await auth.logout();
+                      if (mounted) {
+                        Navigator.pushReplacementNamed(context, '/login');
+                      }
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Confirm delete ─────────────────────────────────────────────────────────
+  void _confirmDelete(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => Padding(
+        padding: EdgeInsets.fromLTRB(
+          24,
+          16,
+          24,
+          MediaQuery.of(context).padding.bottom + 24,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _sheetHandle(),
+            const SizedBox(height: 24),
+            const Text(
+              'Delete account?',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w500,
+                color: Colors.black,
+                letterSpacing: -.3,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'This action is permanent and cannot be undone.',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.black.withOpacity(.4),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: _outlineButton(
+                    label: 'Cancel',
+                    onTap: () => Navigator.pop(context),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _redButton(
+                    label: 'Delete',
+                    onTap: () => Navigator.pop(context),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Snackbar ───────────────────────────────────────────────────────────────
+  void _snack(String msg, {bool error = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Colors.black,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        duration: const Duration(seconds: 3),
+        content: Row(
+          children: [
+            Icon(
+              error ? Icons.error_outline : Icons.check_circle_outline,
+              color: Colors.white,
+              size: 18,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                msg,
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Build ──────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthService>(context);
     final user = auth.currentUser;
 
+    if (user == null) {
+      return const Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(
+          child: Text(
+            'Not logged in',
+            style: TextStyle(fontSize: 16, color: Colors.black),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: Colors.white,
       body: SafeArea(
-        child: user == null
-            ? const Center(
-                child: Text("Not logged in", style: TextStyle(fontSize: 18)),
-              )
-            : SingleChildScrollView(
-                child: Column(
-                  children: [
-                    const SizedBox(height: 30),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Header ───────────────────────────────────────────────────
+              _buildHeader(auth, user),
+              _thickDivider(),
 
-                    // ================= PROFILE HEADER =================
-                    Stack(
-                      alignment: Alignment.bottomRight,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Colors.deepPurple,
-                              width: 3,
-                            ),
-                          ),
-                          child: CircleAvatar(
-                            radius: 60,
-                            backgroundImage: _image != null
-                                ? FileImage(File(_image!.path))
-                                : auth.profileImage != null
-                                ? FileImage(File(auth.profileImage!))
-                                : const NetworkImage(
-                                        "https://via.placeholder.com/150",
-                                      )
-                                      as ImageProvider,
-                          ),
-                        ),
+              // ── Account ───────────────────────────────────────────────────
+              _sectionLabel('Account'),
+              _row(
+                label: 'Edit profile',
+                icon: Icons.person_outline,
+                onTap: () => _showEditProfile(auth),
+              ),
+              _row(
+                label: 'Change password',
+                icon: Icons.lock_outline,
+                onTap: () => _showChangePassword(auth),
+              ),
+              _row(
+                label: 'Payment methods',
+                icon: Icons.credit_card_outlined,
+                onTap: () => _snack('Coming soon'),
+              ),
+              _thickDivider(),
 
-                        // EDIT ICON
-                        GestureDetector(
-                          onTap: () => pickImage(auth),
-                          child: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: const BoxDecoration(
-                              color: Colors.deepPurple,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.edit,
-                              size: 18,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // ================= NAME =================
-                    Text(
-                      user.name,
-                      style: const TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-
-                    const SizedBox(height: 6),
-
-                    Text(
-                      user.email,
-                      style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                    ),
-
-                    const SizedBox(height: 30),
-
-                    // ================= INFO CARDS =================
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Column(
-                        children: [
-                          _buildInfoCard(
-                            icon: Icons.person,
-                            title: "Account",
-                            subtitle: "Manage your profile details",
-                          ),
-                          const SizedBox(height: 12),
-
-                          _buildInfoCard(
-                            icon: Icons.lock,
-                            title: "Security",
-                            subtitle: "Password & authentication",
-                          ),
-                          const SizedBox(height: 12),
-
-                          _buildInfoCard(
-                            icon: Icons.notifications,
-                            title: "Notifications",
-                            subtitle: "Manage alerts & updates",
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 30),
-
-                    // ================= LOGOUT =================
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          onPressed: () async {
-                            await auth.logout();
-
-                            if (context.mounted) {
-                              Navigator.pushReplacementNamed(context, '/login');
-                            }
-                          },
-                          icon: const Icon(Icons.logout),
-                          label: const Text("Logout"),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-                  ],
+              // ── Preferences ───────────────────────────────────────────────
+              _sectionLabel('Preferences'),
+              _row(
+                label: 'Notifications',
+                icon: Icons.notifications_none_outlined,
+                trailing: _switch(
+                  value: _notificationsEnabled,
+                  onChanged: (v) => setState(() => _notificationsEnabled = v),
                 ),
               ),
+              _row(
+                label: 'Dark mode',
+                icon: Icons.dark_mode_outlined,
+                trailing: _switch(
+                  value: _darkMode,
+                  onChanged: (v) => setState(() => _darkMode = v),
+                ),
+              ),
+              _row(
+                label: 'Language',
+                icon: Icons.language_outlined,
+                onTap: () => _snack('Coming soon'),
+              ),
+              _thickDivider(),
+
+              // ── Legal ─────────────────────────────────────────────────────
+              _sectionLabel('Legal'),
+              _row(label: 'Privacy policy', onTap: () => _snack('Coming soon')),
+              _row(label: 'Terms of use', onTap: () => _snack('Coming soon')),
+              _row(label: 'Licences', onTap: () => _snack('Coming soon')),
+              _row(
+                label: 'Download my data',
+                onTap: () => _snack('Coming soon'),
+              ),
+              _thickDivider(),
+
+              // ── Logout / Delete ────────────────────────────────────────────
+              const SizedBox(height: 4),
+              _centeredRow(label: 'Log out', onTap: () => _confirmLogout(auth)),
+              _centeredRow(
+                label: 'Delete or suspend account',
+                onTap: () => _confirmDelete(context),
+                color: Colors.red,
+              ),
+
+              // ── Version ───────────────────────────────────────────────────
+              const SizedBox(height: 32),
+              Center(
+                child: Text(
+                  '1.0.0 (1)',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.black.withOpacity(.3),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 32),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  // ================= INFO CARD WIDGET =================
-  Widget _buildInfoCard({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.deepPurple.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: Colors.deepPurple),
-          ),
-          const SizedBox(width: 12),
+  // ── Header ─────────────────────────────────────────────────────────────────
+  Widget _buildHeader(AuthService auth, dynamic user) {
+    final hasImage = auth.profileImage != null && auth.profileImage!.isNotEmpty;
 
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return GestureDetector(
+      onTap: () => _showEditProfile(auth),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+        child: Row(
+          children: [
+            // Avatar with tap to change
+            GestureDetector(
+              onTap: () => _showPhotoOptions(auth),
+              child: Stack(
+                children: [
+                  Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.black, width: 1.5),
+                    ),
+                    clipBehavior: Clip.hardEdge,
+                    child: hasImage
+                        ? Image.file(
+                            File(auth.profileImage!),
+                            fit: BoxFit.cover,
+                          )
+                        : Container(
+                            color: Colors.grey.shade100,
+                            child: const Icon(
+                              Icons.person_outline,
+                              size: 30,
+                              color: Colors.black54,
+                            ),
+                          ),
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: Container(
+                      width: 22,
+                      height: 22,
+                      decoration: const BoxDecoration(
+                        color: Colors.black,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.camera_alt,
+                        size: 12,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 14),
+            // Name + email
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    user.name,
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black,
+                      letterSpacing: -.3,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    user.email,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.black.withOpacity(.45),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right,
+              size: 20,
+              color: Colors.black.withOpacity(.35),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Reusable widgets ───────────────────────────────────────────────────────
+
+  Widget _sectionLabel(String label) => Padding(
+    padding: const EdgeInsets.fromLTRB(20, 18, 20, 6),
+    child: Text(
+      label.toUpperCase(),
+      style: TextStyle(
+        fontSize: 11,
+        fontWeight: FontWeight.w500,
+        color: Colors.black.withOpacity(.4),
+        letterSpacing: .6,
+      ),
+    ),
+  );
+
+  Widget _row({
+    required String label,
+    IconData? icon,
+    VoidCallback? onTap,
+    Widget? trailing,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            child: Row(
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                if (icon != null) ...[
+                  Icon(icon, size: 18, color: Colors.black.withOpacity(.6)),
+                  const SizedBox(width: 12),
+                ],
+                Expanded(
+                  child: Text(
+                    label,
+                    style: const TextStyle(fontSize: 15, color: Colors.black),
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: TextStyle(color: Colors.grey[600], fontSize: 13),
-                ),
+                trailing ??
+                    (onTap != null
+                        ? Icon(
+                            Icons.chevron_right,
+                            size: 18,
+                            color: Colors.black.withOpacity(.35),
+                          )
+                        : const SizedBox()),
               ],
             ),
           ),
-
-          const Icon(Icons.arrow_forward_ios, size: 16),
+          Padding(
+            padding: const EdgeInsets.only(left: 20),
+            child: Container(height: 0.5, color: Colors.black.withOpacity(.1)),
+          ),
         ],
       ),
     );
   }
+
+  Widget _centeredRow({
+    required String label,
+    required VoidCallback onTap,
+    Color color = Colors.black,
+  }) => GestureDetector(
+    onTap: onTap,
+    behavior: HitTestBehavior.opaque,
+    child: Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 18),
+          child: Center(
+            child: Text(label, style: TextStyle(fontSize: 15, color: color)),
+          ),
+        ),
+        Container(height: 0.5, color: Colors.black.withOpacity(.1)),
+      ],
+    ),
+  );
+
+  Widget _thickDivider() =>
+      Container(height: 8, color: Colors.black.withOpacity(.04));
+
+  Widget _switch({
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) => Transform.scale(
+    scale: 0.85,
+    child: Switch(
+      value: value,
+      onChanged: onChanged,
+      activeColor: Colors.white,
+      activeTrackColor: Colors.black,
+      inactiveThumbColor: Colors.white,
+      inactiveTrackColor: Colors.black.withOpacity(.2),
+    ),
+  );
+
+  Widget _sheetHandle() => Container(
+    width: 36,
+    height: 4,
+    decoration: BoxDecoration(
+      color: Colors.black.withOpacity(.15),
+      borderRadius: BorderRadius.circular(2),
+    ),
+  );
+
+  Widget _sheetRow({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    Color color = Colors.black,
+  }) => GestureDetector(
+    onTap: onTap,
+    behavior: HitTestBehavior.opaque,
+    child: Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          child: Row(
+            children: [
+              Icon(icon, size: 20, color: color),
+              const SizedBox(width: 14),
+              Text(label, style: TextStyle(fontSize: 15, color: color)),
+            ],
+          ),
+        ),
+        Container(height: 0.5, color: Colors.black.withOpacity(.1)),
+      ],
+    ),
+  );
+
+  Widget _inputField({
+    required TextEditingController controller,
+    required String label,
+    TextInputType keyboard = TextInputType.text,
+    bool obscure = false,
+  }) => TextField(
+    controller: controller,
+    keyboardType: keyboard,
+    obscureText: obscure,
+    style: const TextStyle(fontSize: 15, color: Colors.black),
+    decoration: InputDecoration(
+      labelText: label,
+      labelStyle: TextStyle(fontSize: 14, color: Colors.black.withOpacity(.45)),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.black.withOpacity(.3), width: 1),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.black, width: 1.5),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    ),
+  );
+
+  Widget _blackButton({
+    required String? label,
+    bool loading = false,
+    required VoidCallback onTap,
+  }) => GestureDetector(
+    onTap: onTap,
+    child: Container(
+      width: double.infinity,
+      height: 52,
+      decoration: BoxDecoration(
+        color: Colors.black,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Center(
+        child: loading
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
+              )
+            : Text(
+                label ?? '',
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white,
+                ),
+              ),
+      ),
+    ),
+  );
+
+  Widget _outlineButton({required String label, required VoidCallback onTap}) =>
+      GestureDetector(
+        onTap: onTap,
+        child: Container(
+          height: 52,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.black, width: 1.5),
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: Colors.black,
+              ),
+            ),
+          ),
+        ),
+      );
+
+  Widget _redButton({required String label, required VoidCallback onTap}) =>
+      GestureDetector(
+        onTap: onTap,
+        child: Container(
+          height: 52,
+          decoration: BoxDecoration(
+            color: Colors.red,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ),
+      );
 }

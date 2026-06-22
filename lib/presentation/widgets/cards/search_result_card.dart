@@ -47,7 +47,7 @@ class ShopOfferCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  sneaker.shopName ?? "Unknown Shop",
+                  sneaker.shopName,
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,

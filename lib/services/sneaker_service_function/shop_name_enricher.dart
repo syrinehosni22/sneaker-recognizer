@@ -1,30 +1,27 @@
 class ShopNameEnricher {
-  /// Extract shop name from SerpAPI result fields
   static List<Map<String, dynamic>> addShopNames(
     List<Map<String, dynamic>> results,
   ) {
     return results.map((item) {
-      final shopName = _extractShopFromSerp(item);
-      print(shopName);
-
+      final shopName = _extract(item);
       return {...item, "shopName": shopName};
     }).toList();
   }
 
-  /// Try multiple SerpAPI fields safely
-  static String _extractShopFromSerp(Map<String, dynamic> item) {
-    // Most common SerpAPI fields
-    final source = item["source"];
-    final merchant = item["merchant"];
-    final seller = item["seller"];
-    final store = item["store"];
-    final displayShop = item["shop"];
+  static String _extract(Map<String, dynamic> item) {
+    // After ResultMapper, the shop is in "shop".
+    // Also keep fallbacks for raw SerpAPI fields just in case.
+    final value =
+        item["shop"] ??
+        item["shopName"] ??
+        item["source"] ??
+        item["merchant"] ??
+        item["seller"] ??
+        item["store"];
 
-    // Priority order (best → fallback)
-    final rawShop = source ?? merchant ?? seller ?? store ?? displayShop;
-
-    if (rawShop == null) return "Unknown Shop";
-
-    return rawShop.toString().trim();
+    if (value == null || value.toString().trim().isEmpty) {
+      return "Unknown store";
+    }
+    return value.toString().trim();
   }
 }

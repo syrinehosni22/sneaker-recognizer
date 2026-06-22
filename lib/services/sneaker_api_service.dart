@@ -8,48 +8,52 @@ import './sneaker_service_function/membership_sort.dart';
 import './sneaker_service_function/shop_name_enricher.dart';
 
 class SneakerApiService {
-  /// ================================
-  /// 1. IMAGE → AI + FULL PIPELINE
-  /// ================================
+  /// ─────────────────────────────────────────────────────────────────────────
+  /// 1. IMAGE → AI identify → SerpAPI search → full pipeline
+  /// ─────────────────────────────────────────────────────────────────────────
   static Future<Map<String, dynamic>> getSneakerData(XFile image) async {
-    // 1 Upload image
+    // 1. Upload image to Cloudinary
     final imageUrl = await CloudinaryService.uploadImage(image);
 
-    // 2 AI detect sneaker model
+    // 2. AI: identify sneaker model (brand + colorway)
     final model = await OpenAIService.identifySneaker(imageUrl);
 
-    // 3 Get user location
-    final position = await LocationService.getUserLocation();
+    // 3. Optional: user location (for local pricing, not blocking)
+    final position = await LocationService.getUserLocation().catchError(
+      (_) => null,
+    );
 
-    // 4 SerpAPI product search
+    // 4. SerpAPI shopping search
     final rawResults = await ProductSearchService.searchProducts(model);
 
-    // 5 Map results
-    final mappedResults = ResultMapper.mapBase(rawResults);
+    // 5. Map raw SerpAPI fields → standard Sneaker fields
+    final mapped = ResultMapper.mapBase(rawResults);
 
-    // 6 Add shop names
-    //    final enrichedResults = ShopNameEnricher.addShopNames(mappedResults);
+    // 6. Enrich with shop name
+    final enriched = ShopNameEnricher.addShopNames(mapped);
 
-    // 7 Sort by membership / priority
-    final sortedResults = sortByMembership(mappedResults);
+    // 7. Sort: partner shops first
+    final sorted = sortByMembership(enriched);
 
-    return {"model": model, "location": position, "results": sortedResults};
+    return {"model": model, "location": position, "results": sorted};
   }
 
-  /// ================================
-  /// 2. TEXT SEARCH → SERPAPI
+  /// ─────────────────────────────────────────────────────────────────────────
+  /// 2. TEXT SEARCH → SerpAPI → full pipeline
+  /// ─────────────────────────────────────────────────────────────────────────
   static Future<Map<String, dynamic>> searchSneakerByName(String query) async {
+    // 1. SerpAPI shopping search
     final rawResults = await ProductSearchService.searchProducts(query);
 
-    // Map results
-    final mappedResults = ResultMapper.mapBase(rawResults);
+    // 2. Map raw fields
+    final mapped = ResultMapper.mapBase(rawResults);
 
-    // Add shop names
-    final enrichedResults = ShopNameEnricher.addShopNames(mappedResults);
+    // 3. Enrich shop names
+    final enriched = ShopNameEnricher.addShopNames(mapped);
 
-    // Sort results
-    final sortedResults = sortByMembership(enrichedResults);
+    // 4. Sort: partner shops first
+    final sorted = sortByMembership(enriched);
 
-    return {"model": query, "results": sortedResults};
+    return {"model": query, "results": sorted};
   }
 }
