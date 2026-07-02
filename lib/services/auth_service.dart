@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:sneaker_recognizer_plateform/domain/models/user.dart';
+import 'api_client.dart';
 
 class AuthService with ChangeNotifier {
   static const String baseUrl = "http://92.222.243.150:5000/api";
@@ -14,6 +15,8 @@ class AuthService with ChangeNotifier {
   User? get currentUser => _currentUser;
   bool get isLoggedIn => _currentUser != null;
   String? get profileImage => _profileImage;
+  String? get token =>
+      _token; // ← nouveau : utilisé pour restaurer ApiClient au démarrage si besoin
 
   Map<String, String> get _publicHeaders => {
     "Content-Type": "application/json",
@@ -39,9 +42,15 @@ class AuthService with ChangeNotifier {
 
     final data = jsonDecode(res.body);
 
+    // weezo-api renvoie { success, message, data: { user, token } } —
+    // le token est sous data["data"]["token"], pas data["token"].
     _currentUser = User.fromJson(data["data"]["user"]);
-    _token = data["token"];
+    _token = data["data"]["token"];
     _profileImage = null;
+
+    // Propage le token à ApiClient pour que SettingsRepository (2FA,
+    // appareils, paiement, préférences...) puisse s'authentifier.
+    ApiClient.instance.authToken = _token;
 
     notifyListeners();
   }
@@ -62,8 +71,10 @@ class AuthService with ChangeNotifier {
     final data = jsonDecode(res.body);
 
     _currentUser = User.fromJson(data["data"]["user"]);
-    _token = data["token"];
+    _token = data["data"]["token"];
     _profileImage = null;
+
+    ApiClient.instance.authToken = _token;
 
     notifyListeners();
   }
@@ -139,7 +150,9 @@ class AuthService with ChangeNotifier {
       throw Exception(error["message"] ?? "Update failed");
     }
 
-    _currentUser = User.fromJson(jsonDecode(res.body));
+    // Même remarque : la réponse est enveloppée dans { success, message, data }.
+    final data = jsonDecode(res.body);
+    _currentUser = User.fromJson(data["data"]["user"]);
     notifyListeners();
   }
 
@@ -166,6 +179,9 @@ class AuthService with ChangeNotifier {
     _currentUser = null;
     _token = null;
     _profileImage = null;
+
+    ApiClient.instance.authToken = null;
+
     notifyListeners();
   }
 }

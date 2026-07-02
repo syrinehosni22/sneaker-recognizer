@@ -4,6 +4,18 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:sneaker_recognizer_plateform/services/auth_service.dart';
 
+import 'connected_devices_screen.dart';
+import 'download_and_password_sheets.dart';
+import 'language_screen.dart';
+import 'legal_text_screen.dart';
+import 'location_privacy_screen.dart';
+import 'payment_methods_screen.dart';
+import 'permissions_screen.dart';
+import 'profile_ui.dart';
+import 'two_factor_sheet.dart';
+import '../../../services/settings_repository.dart';
+import '../../../services/settings_service.dart';
+
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -13,8 +25,54 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final ImagePicker _picker = ImagePicker();
+
+  bool _settingsLoading = true;
   bool _notificationsEnabled = true;
   bool _darkMode = false;
+  bool _twoFactorEnabled = false;
+  bool _unusualLoginAlerts = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    // 1. Show cached values instantly so the UI never blocks on network.
+    try {
+      await _readCacheIntoState().timeout(const Duration(seconds: 5));
+    } catch (e) {
+      debugPrint('Failed to read cached settings: $e');
+    } finally {
+      if (mounted) setState(() => _settingsLoading = false);
+    }
+
+    // 2. Reconcile with the backend in the background; update UI if it
+    // returns something different (e.g. settings changed on another device).
+    try {
+      await SettingsRepository.refreshFromBackend().timeout(
+        const Duration(seconds: 8),
+      );
+      await _readCacheIntoState();
+    } catch (e) {
+      debugPrint('Failed to sync settings from backend: $e');
+    }
+  }
+
+  Future<void> _readCacheIntoState() async {
+    final notifications = await SettingsService.getNotifications();
+    final darkMode = await SettingsService.getDarkMode();
+    final twoFactor = await SettingsService.getTwoFactor();
+    final unusualAlerts = await SettingsService.getUnusualLoginAlerts();
+    if (!mounted) return;
+    setState(() {
+      _notificationsEnabled = notifications;
+      _darkMode = darkMode;
+      _twoFactorEnabled = twoFactor;
+      _unusualLoginAlerts = unusualAlerts;
+    });
+  }
 
   // ── Photo picker ───────────────────────────────────────────────────────────
   void _showPhotoOptions(AuthService auth) {
@@ -244,6 +302,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  // ── Sécurité du compte : 2FA (backend-backed) ───────────────────────────────
+  Future<void> _toggleTwoFactor(bool value) async {
+    if (value) {
+      final confirmed = await show2FASetupSheet(
+        context,
+        startSetup: () async {
+          final setup = await SettingsRepository.start2FASetup();
+          return {
+            'qrCodeUrl': setup.qrCodeUrl,
+            'manualSecret': setup.manualSecret,
+          };
+        },
+        verifyCode: (code) => SettingsRepository.confirm2FASetup(code),
+      );
+      if (confirmed != true) return;
+      if (!mounted) return;
+      setState(() => _twoFactorEnabled = true);
+      _snack('Double authentification activée');
+    } else {
+      final confirmed = await confirmDisable2FASheet(context);
+      if (confirmed != true) return;
+      final ok = await SettingsRepository.disable2FA();
+      if (!mounted) return;
+      if (ok) {
+        setState(() => _twoFactorEnabled = false);
+        _snack('Double authentification désactivée');
+      } else {
+        _snack('Échec de la désactivation, réessayez', error: true);
+      }
+    }
+  }
+
+  Future<void> _toggleUnusualAlerts(bool value) async {
+    setState(() => _unusualLoginAlerts = value);
+    final ok = await SettingsRepository.setUnusualLoginAlerts(value);
+    if (!ok && mounted) {
+      _snack('Synchronisation avec le serveur échouée', error: true);
+    }
+  }
+
   // ── Confirm logout ─────────────────────────────────────────────────────────
   void _confirmLogout(AuthService auth) {
     showModalBottomSheet(
@@ -311,63 +409,92 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // ── Confirm delete ─────────────────────────────────────────────────────────
-  void _confirmDelete(BuildContext context) {
+  // ── Confirm delete (backend-backed) ─────────────────────────────────────────
+  void _confirmDelete(AuthService auth) {
+    bool loading = false;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => Padding(
-        padding: EdgeInsets.fromLTRB(
-          24,
-          16,
-          24,
-          MediaQuery.of(context).padding.bottom + 24,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _sheetHandle(),
-            const SizedBox(height: 24),
-            const Text(
-              'Delete account?',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w500,
-                color: Colors.black,
-                letterSpacing: -.3,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'This action is permanent and cannot be undone.',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.black.withOpacity(.4),
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: _outlineButton(
-                    label: 'Cancel',
-                    onTap: () => Navigator.pop(context),
-                  ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheet) => Padding(
+          padding: EdgeInsets.fromLTRB(
+            24,
+            16,
+            24,
+            MediaQuery.of(context).padding.bottom + 24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _sheetHandle(),
+              const SizedBox(height: 24),
+              const Text(
+                'Delete account?',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black,
+                  letterSpacing: -.3,
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _redButton(
-                    label: 'Delete',
-                    onTap: () => Navigator.pop(context),
-                  ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'This action is permanent and cannot be undone.',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.black.withOpacity(.4),
                 ),
-              ],
-            ),
-          ],
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: _outlineButton(
+                      label: 'Cancel',
+                      onTap: () => Navigator.pop(ctx),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _redButton(
+                      label: loading ? '...' : 'Delete',
+                      onTap: loading
+                          ? () {}
+                          : () async {
+                              setSheet(() => loading = true);
+                              final deleted =
+                                  await SettingsRepository.deleteAccount();
+                              if (!ctx.mounted) return;
+                              if (!deleted) {
+                                setSheet(() => loading = false);
+                                _snack(
+                                  'Échec de la suppression, réessayez',
+                                  error: true,
+                                );
+                                return;
+                              }
+                              try {
+                                await auth.logout();
+                              } catch (_) {}
+                              if (ctx.mounted) Navigator.pop(ctx);
+                              if (mounted) {
+                                Navigator.pushReplacementNamed(
+                                  context,
+                                  '/login',
+                                );
+                                _snack('Compte supprimé');
+                              }
+                            },
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -375,31 +502,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   // ── Snackbar ───────────────────────────────────────────────────────────────
   void _snack(String msg, {bool error = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: Colors.black,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        duration: const Duration(seconds: 3),
-        content: Row(
-          children: [
-            Icon(
-              error ? Icons.error_outline : Icons.check_circle_outline,
-              color: Colors.white,
-              size: 18,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                msg,
-                style: const TextStyle(color: Colors.white, fontSize: 14),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    ProfileUi.snack(context, msg, error: error);
   }
 
   // ── Build ──────────────────────────────────────────────────────────────────
@@ -423,93 +526,240 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // ── Header ───────────────────────────────────────────────────
-              _buildHeader(auth, user),
-              _thickDivider(),
+        child: _settingsLoading
+            ? const Center(
+                child: CircularProgressIndicator(color: Colors.black),
+              )
+            : RefreshIndicator(
+                color: Colors.black,
+                onRefresh: _loadSettings,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // ── Header ───────────────────────────────────────────
+                      _buildHeader(auth, user),
+                      _thickDivider(),
 
-              // ── Account ───────────────────────────────────────────────────
-              _sectionLabel('Account'),
-              _row(
-                label: 'Edit profile',
-                icon: Icons.person_outline,
-                onTap: () => _showEditProfile(auth),
-              ),
-              _row(
-                label: 'Change password',
-                icon: Icons.lock_outline,
-                onTap: () => _showChangePassword(auth),
-              ),
-              _row(
-                label: 'Payment methods',
-                icon: Icons.credit_card_outlined,
-                onTap: () => _snack('Coming soon'),
-              ),
-              _thickDivider(),
+                      // ── Account ─────────────────────────────────────────
+                      _sectionLabel('Account'),
+                      _row(
+                        label: 'Edit profile',
+                        icon: Icons.person_outline,
+                        onTap: () => _showEditProfile(auth),
+                      ),
+                      _row(
+                        label: 'Change password',
+                        icon: Icons.lock_outline,
+                        onTap: () => _showChangePassword(auth),
+                      ),
+                      _row(
+                        label: 'Payment methods',
+                        icon: Icons.credit_card_outlined,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const PaymentMethodsScreen(),
+                          ),
+                        ),
+                      ),
+                      _thickDivider(),
 
-              // ── Preferences ───────────────────────────────────────────────
-              _sectionLabel('Preferences'),
-              _row(
-                label: 'Notifications',
-                icon: Icons.notifications_none_outlined,
-                trailing: _switch(
-                  value: _notificationsEnabled,
-                  onChanged: (v) => setState(() => _notificationsEnabled = v),
-                ),
-              ),
-              _row(
-                label: 'Dark mode',
-                icon: Icons.dark_mode_outlined,
-                trailing: _switch(
-                  value: _darkMode,
-                  onChanged: (v) => setState(() => _darkMode = v),
-                ),
-              ),
-              _row(
-                label: 'Language',
-                icon: Icons.language_outlined,
-                onTap: () => _snack('Coming soon'),
-              ),
-              _thickDivider(),
+                      // ── Sécurité du compte ──────────────────────────────
+                      _sectionLabel('Sécurité du compte'),
+                      _row(
+                        label: 'Mot de passe fort',
+                        icon: Icons.password_outlined,
+                        onTap: () => showPasswordTipsSheet(
+                          context,
+                          onChangePassword: () => _showChangePassword(auth),
+                        ),
+                      ),
+                      _row(
+                        label: 'Authentification à deux facteurs (2FA)',
+                        icon: Icons.verified_user_outlined,
+                        trailing: _switch(
+                          value: _twoFactorEnabled,
+                          onChanged: _toggleTwoFactor,
+                        ),
+                      ),
+                      _row(
+                        label: 'Appareils connectés',
+                        icon: Icons.devices_outlined,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const ConnectedDevicesScreen(),
+                          ),
+                        ),
+                      ),
+                      _row(
+                        label: 'Alertes de connexion inhabituelle',
+                        icon: Icons.notifications_active_outlined,
+                        trailing: _switch(
+                          value: _unusualLoginAlerts,
+                          onChanged: _toggleUnusualAlerts,
+                        ),
+                      ),
+                      _thickDivider(),
 
-              // ── Legal ─────────────────────────────────────────────────────
-              _sectionLabel('Legal'),
-              _row(label: 'Privacy policy', onTap: () => _snack('Coming soon')),
-              _row(label: 'Terms of use', onTap: () => _snack('Coming soon')),
-              _row(label: 'Licences', onTap: () => _snack('Coming soon')),
-              _row(
-                label: 'Download my data',
-                onTap: () => _snack('Coming soon'),
-              ),
-              _thickDivider(),
+                      // ── Autorisations ────────────────────────────────────
+                      _sectionLabel('Autorisations'),
+                      _row(
+                        label: 'Caméra, micro, photos, contacts, Bluetooth',
+                        icon: Icons.admin_panel_settings_outlined,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const PermissionsScreen(),
+                          ),
+                        ),
+                      ),
+                      _thickDivider(),
 
-              // ── Logout / Delete ────────────────────────────────────────────
-              const SizedBox(height: 4),
-              _centeredRow(label: 'Log out', onTap: () => _confirmLogout(auth)),
-              _centeredRow(
-                label: 'Delete or suspend account',
-                onTap: () => _confirmDelete(context),
-                color: Colors.red,
-              ),
+                      // ── Confidentialité ───────────────────────────────────
+                      _sectionLabel('Confidentialité'),
+                      _row(
+                        label: 'Localisation',
+                        icon: Icons.location_on_outlined,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const LocationPrivacyScreen(),
+                          ),
+                        ),
+                      ),
+                      _thickDivider(),
 
-              // ── Version ───────────────────────────────────────────────────
-              const SizedBox(height: 32),
-              Center(
-                child: Text(
-                  '1.0.0 (1)',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.black.withOpacity(.3),
+                      // ── Preferences ───────────────────────────────────────
+                      _sectionLabel('Preferences'),
+                      _row(
+                        label: 'Notifications',
+                        icon: Icons.notifications_none_outlined,
+                        trailing: _switch(
+                          value: _notificationsEnabled,
+                          onChanged: (v) async {
+                            setState(() => _notificationsEnabled = v);
+                            final ok =
+                                await SettingsRepository.setNotifications(v);
+                            if (!ok && mounted) {
+                              _snack(
+                                'Synchronisation avec le serveur échouée',
+                                error: true,
+                              );
+                            }
+                          },
+                        ),
+                      ),
+                      _row(
+                        label: 'Dark mode',
+                        icon: Icons.dark_mode_outlined,
+                        trailing: _switch(
+                          value: _darkMode,
+                          onChanged: (v) async {
+                            setState(() => _darkMode = v);
+                            final ok = await SettingsRepository.setDarkMode(v);
+                            if (!ok && mounted) {
+                              _snack(
+                                'Synchronisation avec le serveur échouée',
+                                error: true,
+                              );
+                            }
+                          },
+                        ),
+                      ),
+                      _row(
+                        label: 'Language',
+                        icon: Icons.language_outlined,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const LanguageScreen(),
+                          ),
+                        ),
+                      ),
+                      _thickDivider(),
+
+                      // ── Legal ───────────────────────────────────────────
+                      _sectionLabel('Legal'),
+                      _row(
+                        label: 'Privacy policy',
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const LegalTextScreen(
+                              title: 'Privacy policy',
+                              content: LegalTextScreen.privacyPolicy,
+                            ),
+                          ),
+                        ),
+                      ),
+                      _row(
+                        label: 'Terms of use',
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const LegalTextScreen(
+                              title: 'Terms of use',
+                              content: LegalTextScreen.termsOfUse,
+                            ),
+                          ),
+                        ),
+                      ),
+                      _row(
+                        label: 'Licences',
+                        onTap: () => showLicensePage(
+                          context: context,
+                          applicationName: 'Sneaker Recognizer',
+                        ),
+                      ),
+                      _row(
+                        label: 'Download my data',
+                        onTap: () => showDownloadDataSheet(
+                          context,
+                          localFallback: {
+                            'name': user.name,
+                            'email': user.email,
+                            'settings': {
+                              'notifications': _notificationsEnabled,
+                              'darkMode': _darkMode,
+                              'twoFactorEnabled': _twoFactorEnabled,
+                              'unusualLoginAlerts': _unusualLoginAlerts,
+                            },
+                          },
+                        ),
+                      ),
+                      _thickDivider(),
+
+                      // ── Logout / Delete ─────────────────────────────────
+                      const SizedBox(height: 4),
+                      _centeredRow(
+                        label: 'Log out',
+                        onTap: () => _confirmLogout(auth),
+                      ),
+                      _centeredRow(
+                        label: 'Delete or suspend account',
+                        onTap: () => _confirmDelete(auth),
+                        color: Colors.red,
+                      ),
+
+                      // ── Version ──────────────────────────────────────────
+                      const SizedBox(height: 32),
+                      Center(
+                        child: Text(
+                          '1.0.0 (1)',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.black.withOpacity(.3),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                    ],
                   ),
                 ),
               ),
-              const SizedBox(height: 32),
-            ],
-          ),
-        ),
       ),
     );
   }
